@@ -7,6 +7,7 @@ export type RoadSegment = {
 };
 
 export type RoadTileKind = "curve" | "roundabout" | "straight";
+export type TrackPropKind = "cone" | "light" | "straightBarrier";
 
 export type RoadTile = {
   id: string;
@@ -15,8 +16,16 @@ export type RoadTile = {
   rotationY?: number;
 };
 
+export type TrackProp = {
+  id: string;
+  kind: TrackPropKind;
+  position: Vector3Tuple;
+  rotationY?: number;
+  scale?: number;
+};
+
 export const ROAD_TILE_SIZE = 1.85;
-export const ROAD_WIDTH = 2.4;
+export const ROAD_WIDTH = 3.05;
 export const START_POSITION: Vector3Tuple = [0, 0, -7.4];
 export const START_HEADING = Math.PI / 2;
 export const MAP_LIMIT = 16;
@@ -51,24 +60,139 @@ export const roadTiles: RoadTile[] = [
     id: "curve-bottom-left",
     kind: "curve",
     position: [left, 0, bottom],
-    rotationY: Math.PI,
+    rotationY: Math.PI / 2,
   },
   {
     id: "curve-bottom-right",
     kind: "curve",
     position: [right, 0, bottom],
-    rotationY: -Math.PI / 2,
+    rotationY: 0,
   },
   {
     id: "curve-top-right",
     kind: "curve",
     position: [right, 0, top],
-    rotationY: 0,
+    rotationY: (Math.PI * 3) / 2,
   },
   {
     id: "curve-top-left",
     kind: "curve",
     position: [left, 0, top],
+    rotationY: Math.PI,
+  },
+];
+
+export const trackProps: TrackProp[] = [
+  {
+    id: "barrier-bottom-left",
+    kind: "straightBarrier",
+    position: [-3.7, 0.02, bottom + 0.03],
+  },
+  {
+    id: "barrier-bottom-right",
+    kind: "straightBarrier",
+    position: [3.7, 0.02, bottom + 0.03],
+  },
+  {
+    id: "barrier-top-left",
+    kind: "straightBarrier",
+    position: [-3.7, 0.02, top - 0.03],
+  },
+  {
+    id: "barrier-top-right",
+    kind: "straightBarrier",
+    position: [3.7, 0.02, top - 0.03],
+  },
+  {
+    id: "barrier-left-mid",
+    kind: "straightBarrier",
+    position: [left + 0.03, 0.02, 0],
+    rotationY: Math.PI / 2,
+  },
+  {
+    id: "barrier-right-mid",
+    kind: "straightBarrier",
+    position: [right - 0.03, 0.02, 0],
+    rotationY: Math.PI / 2,
+  },
+  ...[
+    [left + 1.25, bottom + 1.25],
+    [right - 1.25, bottom + 1.25],
+    [right - 1.25, top - 1.25],
+    [left + 1.25, top - 1.25],
+  ].map(([x, z], index) => ({
+    id: `corner-cone-${index}`,
+    kind: "cone" as const,
+    position: [x, 0.02, z] as Vector3Tuple,
+    scale: 0.8,
+  })),
+  {
+    id: "light-bottom-left",
+    kind: "light",
+    position: [left + 1.4, 0.02, bottom - 1.1],
+    rotationY: Math.PI,
+  },
+  {
+    id: "light-bottom-right",
+    kind: "light",
+    position: [right - 1.4, 0.02, bottom - 1.1],
+    rotationY: Math.PI,
+  },
+  {
+    id: "light-bottom-mid",
+    kind: "light",
+    position: [0, 0.02, bottom - 1.1],
+    rotationY: Math.PI,
+  },
+  {
+    id: "light-top-left",
+    kind: "light",
+    position: [left + 1.4, 0.02, top + 1.1],
+  },
+  {
+    id: "light-top-right",
+    kind: "light",
+    position: [right - 1.4, 0.02, top + 1.1],
+  },
+  {
+    id: "light-top-mid",
+    kind: "light",
+    position: [0, 0.02, top + 1.1],
+  },
+  {
+    id: "light-left-mid",
+    kind: "light",
+    position: [left - 1.1, 0.02, 0],
+    rotationY: -Math.PI / 2,
+  },
+  {
+    id: "light-left-upper",
+    kind: "light",
+    position: [left - 1.1, 0.02, top - 2.8],
+    rotationY: -Math.PI / 2,
+  },
+  {
+    id: "light-left-lower",
+    kind: "light",
+    position: [left - 1.1, 0.02, bottom + 2.8],
+    rotationY: -Math.PI / 2,
+  },
+  {
+    id: "light-right-mid",
+    kind: "light",
+    position: [right + 1.1, 0.02, 0],
+    rotationY: Math.PI / 2,
+  },
+  {
+    id: "light-right-upper",
+    kind: "light",
+    position: [right + 1.1, 0.02, top - 2.8],
+    rotationY: Math.PI / 2,
+  },
+  {
+    id: "light-right-lower",
+    kind: "light",
+    position: [right + 1.1, 0.02, bottom + 2.8],
     rotationY: Math.PI / 2,
   },
 ];

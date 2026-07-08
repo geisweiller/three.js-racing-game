@@ -16,6 +16,9 @@ type PlayerProps = {
 export function Player({ input }: PlayerProps) {
   const playerRef = useRef<Group>(null);
   const vehicleState = useRef<VehicleState>({
+    acceleration: 0,
+    angularSpeed: 0,
+    driftIntensity: 0,
     position: START_POSITION,
     heading: START_HEADING,
     speed: 0,
@@ -25,10 +28,14 @@ export function Player({ input }: PlayerProps) {
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const setPlayerHeading = useGameStore((state) => state.setPlayerHeading);
   const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
+  const setVehicleTelemetry = useGameStore((state) => state.setVehicleTelemetry);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
 
   useEffect(() => {
     vehicleState.current = {
+      acceleration: 0,
+      angularSpeed: 0,
+      driftIntensity: 0,
       position: START_POSITION,
       heading: START_HEADING,
       speed: 0,
@@ -62,6 +69,12 @@ export function Player({ input }: PlayerProps) {
 
     setPlayerHeading(nextState.heading);
     setPlayerPosition(nextState.position);
+    setVehicleTelemetry({
+      angularSpeed: nextState.angularSpeed,
+      driftIntensity: nextState.driftIntensity,
+      speed: nextState.speed,
+      throttle: Number(input.forward) - Number(input.backward),
+    });
   });
 
   return (

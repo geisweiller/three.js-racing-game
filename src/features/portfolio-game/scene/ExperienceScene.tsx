@@ -3,11 +3,13 @@
 import { useEffect } from "react";
 import { useGameStore } from "../game/useGameStore";
 import { useKeyboardControls } from "../game/useKeyboardControls";
+import { DriftMarks } from "./DriftMarks";
 import { FollowCamera } from "./FollowCamera";
 import { Ground } from "./Ground";
 import { Lights } from "./Lights";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
+import { VehicleAudio } from "./VehicleAudio";
 
 export function ExperienceScene() {
   const input = useKeyboardControls();
@@ -32,8 +34,10 @@ export function ExperienceScene() {
       <Lights />
       <Ground />
       <RacingTrack />
+      <DriftMarks />
       <Player input={input} />
       <FollowCamera />
+      <VehicleAudio />
     </>
   );
 }

@@ -10,6 +10,9 @@ export type MovementInput = {
 };
 
 export type VehicleState = {
+  acceleration: number;
+  angularSpeed: number;
+  driftIntensity: number;
   position: Vector3Tuple;
   heading: number;
   speed: number;
@@ -51,6 +54,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * clamp(t, 0, 1);
+}
+
 export function updateVehicle(
   state: VehicleState,
   input: MovementInput,
@@ -59,26 +66,46 @@ export function updateVehicle(
   handling: VehicleHandling = defaultHandling,
 ): VehicleState {
   const throttle = Number(input.forward) - Number(input.backward);
-  const steering = Number(input.left) - Number(input.right);
+  const inputX = Number(input.left) - Number(input.right);
   const surfaceGrip = surface === "track" ? 1 : handling.offroadGripMultiplier;
   const surfaceSpeed = surface === "track" ? 1 : handling.offroadSpeedMultiplier;
-  let speed = state.speed;
+  let speed = clamp(state.speed, handling.maxReverseSpeed, handling.maxForwardSpeed * surfaceSpeed);
+  let direction = Math.sign(speed);
 
-  if (throttle > 0) {
-    speed += handling.acceleration * delta;
+  if (direction === 0) {
+    direction = Math.abs(throttle) > 0.1 ? Math.sign(throttle) : 1;
+  }
+
+  const normalizedSpeed = clamp(Math.abs(speed) / handling.maxForwardSpeed, 0, 1);
+  const steeringGrip = clamp(normalizedSpeed, 0.28, 1);
+  const targetAngular = inputX * steeringGrip * handling.steerRate * surfaceGrip * direction;
+  const angularSpeed = lerp(state.angularSpeed, targetAngular, delta * 6);
+  const heading = state.heading + angularSpeed * delta;
+
+  if (throttle < 0 && speed > 0.1) {
+    speed = lerp(speed, 0, delta * 8);
+  } else if (throttle > 0) {
+    speed = lerp(speed, handling.maxForwardSpeed * surfaceSpeed, delta * 1.5);
   } else if (throttle < 0) {
-    speed -= handling.reverseAcceleration * delta;
+    speed = lerp(speed, handling.maxReverseSpeed * surfaceSpeed, delta * 2);
   } else {
     speed = moveTowardZero(speed, handling.friction * delta);
   }
 
+  speed *= Math.max(0, 1 - 0.1 * delta);
   speed = clamp(speed, handling.maxReverseSpeed, handling.maxForwardSpeed * surfaceSpeed);
 
-  const speedRatio = Math.min(1, Math.abs(speed) / handling.maxForwardSpeed);
-  const reverseSteeringMultiplier = speed < 0 ? -1 : 1;
-  const heading =
-    state.heading +
-    steering * handling.steerRate * surfaceGrip * speedRatio * reverseSteeringMultiplier * delta;
+  const acceleration = lerp(
+    state.acceleration,
+    speed + 0.25 * speed * Math.abs(speed),
+    delta,
+  );
+  const isTurningAtSpeed =
+    Math.abs(inputX) > 0.15 && Math.abs(speed) > handling.maxForwardSpeed * 0.42;
+  const driftIntensity = isTurningAtSpeed
+    ? Math.abs(speed - acceleration) / Math.max(1, handling.maxForwardSpeed) +
+      Math.abs(angularSpeed) * 0.55
+    : 0;
 
   const nextPosition = clampToMap([
     state.position[0] + Math.sin(heading) * speed * delta,
@@ -87,6 +114,9 @@ export function updateVehicle(
   ]);
 
   return {
+    acceleration,
+    angularSpeed,
+    driftIntensity,
     position: nextPosition,
     heading,
     speed,

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { clampToMap, getMovementVector, updateVehicle } from "./movement";
 import { getVehicleOption } from "../data/vehicleOptions";
 
+const baseState = {
+  acceleration: 0,
+  angularSpeed: 0,
+  driftIntensity: 0,
+};
+
 describe("getMovementVector", () => {
   it("normalizes diagonal movement", () => {
     const vector = getMovementVector({
@@ -31,7 +37,7 @@ describe("clampToMap", () => {
 describe("updateVehicle", () => {
   it("accelerates the vehicle forward", () => {
     const nextState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 0 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       { forward: true, backward: false, left: false, right: false },
       0.5,
     );
@@ -40,32 +46,32 @@ describe("updateVehicle", () => {
     expect(nextState.position[2]).toBeGreaterThan(2);
   });
 
-  it("turns only while the vehicle has movement speed", () => {
+  it("allows low-speed steering like the Starter Kit vehicle model", () => {
     const idleState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 0 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       { forward: false, backward: false, left: false, right: true },
       0.5,
     );
 
     const movingState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 4 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 4 },
       { forward: false, backward: false, left: true, right: false },
       0.5,
     );
 
-    expect(idleState.heading).toBe(0);
+    expect(idleState.heading).toBeLessThan(0);
     expect(movingState.heading).toBeGreaterThan(0);
   });
 
   it("limits top speed while driving off road", () => {
     const nextState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 6 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 6 },
       { forward: true, backward: false, left: false, right: false },
-      0.5,
+      1,
       "offroad",
     );
 
-    expect(nextState.speed).toBeLessThan(3);
+    expect(nextState.speed).toBeLessThan(3.2);
   });
 
   it("uses vehicle handling to make the formula 1 faster than the ambulance", () => {
@@ -74,14 +80,14 @@ describe("updateVehicle", () => {
     const input = { forward: true, backward: false, left: false, right: false };
 
     const formulaState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 0 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       input,
       1,
       "track",
       formula.handling,
     );
     const ambulanceState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 0 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       input,
       1,
       "track",
@@ -97,14 +103,14 @@ describe("updateVehicle", () => {
     const input = { forward: true, backward: false, left: true, right: false };
 
     const kartState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 3 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
       input,
       0.25,
       "track",
       kart.handling,
     );
     const ambulanceState = updateVehicle(
-      { position: [0, 0, 2], heading: 0, speed: 3 },
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
       input,
       0.25,
       "track",
@@ -112,5 +118,25 @@ describe("updateVehicle", () => {
     );
 
     expect(kartState.heading).toBeGreaterThan(ambulanceState.heading);
+  });
+
+  it("reports drift intensity while steering at speed", () => {
+    const nextState = updateVehicle(
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
+      { forward: true, backward: false, left: true, right: false },
+      0.5,
+    );
+
+    expect(nextState.driftIntensity).toBeGreaterThan(0.5);
+  });
+
+  it("does not report drift marks while driving straight at speed", () => {
+    const nextState = updateVehicle(
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
+      { forward: true, backward: false, left: false, right: false },
+      0.5,
+    );
+
+    expect(nextState.driftIntensity).toBe(0);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPointOnTrack, roadTiles, START_POSITION } from "./trackData";
+import { isPointOnTrack, roadTiles, START_POSITION, trackProps } from "./trackData";
 
 describe("isPointOnTrack", () => {
   it("recognizes the start line as part of the track", () => {
@@ -13,5 +13,11 @@ describe("isPointOnTrack", () => {
   it("creates a closed circuit with straights and corners", () => {
     expect(roadTiles.some((tile) => tile.kind === "curve")).toBe(true);
     expect(roadTiles.filter((tile) => tile.kind === "straight").length).toBeGreaterThan(20);
+  });
+
+  it("adds visual props around the circuit", () => {
+    expect(trackProps.some((prop) => prop.kind === "cone")).toBe(true);
+    expect(trackProps.some((prop) => prop.kind === "straightBarrier")).toBe(true);
+    expect(trackProps.filter((prop) => prop.kind === "light").length).toBeGreaterThan(8);
   });
 });
