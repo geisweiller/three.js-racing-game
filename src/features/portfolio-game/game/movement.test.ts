@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clampToMap, getMovementVector, updateVehicle } from "./movement";
+import { getVehicleOption } from "../data/vehicleOptions";
 
 describe("getMovementVector", () => {
   it("normalizes diagonal movement", () => {
@@ -65,5 +66,51 @@ describe("updateVehicle", () => {
     );
 
     expect(nextState.speed).toBeLessThan(3);
+  });
+
+  it("uses vehicle handling to make the formula 1 faster than the ambulance", () => {
+    const formula = getVehicleOption("formula-1");
+    const ambulance = getVehicleOption("ambulance");
+    const input = { forward: true, backward: false, left: false, right: false };
+
+    const formulaState = updateVehicle(
+      { position: [0, 0, 2], heading: 0, speed: 0 },
+      input,
+      1,
+      "track",
+      formula.handling,
+    );
+    const ambulanceState = updateVehicle(
+      { position: [0, 0, 2], heading: 0, speed: 0 },
+      input,
+      1,
+      "track",
+      ambulance.handling,
+    );
+
+    expect(formulaState.speed).toBeGreaterThan(ambulanceState.speed);
+  });
+
+  it("uses vehicle handling to make the kart turn easier than the ambulance", () => {
+    const kart = getVehicleOption("kart");
+    const ambulance = getVehicleOption("ambulance");
+    const input = { forward: true, backward: false, left: true, right: false };
+
+    const kartState = updateVehicle(
+      { position: [0, 0, 2], heading: 0, speed: 3 },
+      input,
+      0.25,
+      "track",
+      kart.handling,
+    );
+    const ambulanceState = updateVehicle(
+      { position: [0, 0, 2], heading: 0, speed: 3 },
+      input,
+      0.25,
+      "track",
+      ambulance.handling,
+    );
+
+    expect(kartState.heading).toBeGreaterThan(ambulanceState.heading);
   });
 });

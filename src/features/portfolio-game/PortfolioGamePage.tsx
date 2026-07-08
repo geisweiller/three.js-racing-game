@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { GameHud } from "@/components/game/GameHud";
-import { InteractionPanel } from "@/components/game/InteractionPanel";
+import { IntroScreen } from "@/components/game/IntroScreen";
 import { useGameStore } from "./game/useGameStore";
 
 const GameCanvas = dynamic(
@@ -19,6 +19,7 @@ const GameCanvas = dynamic(
 );
 
 export function PortfolioGamePage() {
+  const gamePhase = useGameStore((state) => state.gamePhase);
   const setOpenedSectionId = useGameStore((state) => state.setOpenedSectionId);
 
   useEffect(() => {
@@ -35,11 +36,14 @@ export function PortfolioGamePage() {
     };
   }, [setOpenedSectionId]);
 
+  if (gamePhase === "intro") {
+    return <IntroScreen />;
+  }
+
   return (
     <main className="relative h-dvh w-dvw overflow-hidden bg-[#111418]">
       <GameCanvas />
       <GameHud />
-      <InteractionPanel />
     </main>
   );
 }

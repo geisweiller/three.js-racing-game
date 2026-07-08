@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPointOnTrack, START_POSITION } from "./trackData";
+import { isPointOnTrack, roadTiles, START_POSITION } from "./trackData";
 
 describe("isPointOnTrack", () => {
   it("recognizes the start line as part of the track", () => {
@@ -8,5 +8,10 @@ describe("isPointOnTrack", () => {
 
   it("recognizes points far outside the racing loop as off road", () => {
     expect(isPointOnTrack([13, 0, 13])).toBe(false);
+  });
+
+  it("creates a closed circuit with straights and corners", () => {
+    expect(roadTiles.some((tile) => tile.kind === "curve")).toBe(true);
+    expect(roadTiles.filter((tile) => tile.kind === "straight").length).toBeGreaterThan(20);
   });
 });

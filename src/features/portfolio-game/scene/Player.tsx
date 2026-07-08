@@ -1,42 +1,17 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
-import type { Group, Mesh, Object3D } from "three";
+import { useEffect, useRef } from "react";
+import type { Group } from "three";
+import { getVehicleOption } from "../data/vehicleOptions";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
 import { useGameStore } from "../game/useGameStore";
 import { isPointOnTrack, START_HEADING, START_POSITION } from "../data/trackData";
-
-const VEHICLE_MODEL_PATH = "/starter-kit-racing/models/vehicle-truck-purple.glb";
+import { GlbModel } from "./GlbModel";
 
 type PlayerProps = {
   input: MovementInput;
 };
-
-function isMesh(object: Object3D): object is Mesh {
-  return "isMesh" in object;
-}
-
-function cloneWithShadows(source: Object3D) {
-  const clone = source.clone(true);
-
-  clone.traverse((child) => {
-    if (isMesh(child)) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-
-  return clone;
-}
-
-function VehicleModel() {
-  const { scene } = useGLTF(VEHICLE_MODEL_PATH);
-  const model = useMemo(() => cloneWithShadows(scene), [scene]);
-
-  return <primitive object={model} scale={0.56} />;
-}
 
 export function Player({ input }: PlayerProps) {
   const playerRef = useRef<Group>(null);
@@ -47,8 +22,10 @@ export function Player({ input }: PlayerProps) {
   });
   const openedSectionId = useGameStore((state) => state.openedSectionId);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
+  const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const setPlayerHeading = useGameStore((state) => state.setPlayerHeading);
   const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
+  const selectedVehicle = getVehicleOption(selectedVehicleId);
 
   useEffect(() => {
     vehicleState.current = {
@@ -71,7 +48,13 @@ export function Player({ input }: PlayerProps) {
     }
 
     const surface = isPointOnTrack(vehicleState.current.position, 0.35) ? "track" : "offroad";
-    const nextState = updateVehicle(vehicleState.current, input, delta, surface);
+    const nextState = updateVehicle(
+      vehicleState.current,
+      input,
+      delta,
+      surface,
+      selectedVehicle.handling,
+    );
     vehicleState.current = nextState;
 
     player.position.set(...nextState.position);
@@ -83,9 +66,7 @@ export function Player({ input }: PlayerProps) {
 
   return (
     <group ref={playerRef} position={START_POSITION} rotation={[0, START_HEADING, 0]}>
-      <VehicleModel />
+      <GlbModel path={selectedVehicle.modelPath} modelScale={selectedVehicle.scale} />
     </group>
   );
 }
-
-useGLTF.preload(VEHICLE_MODEL_PATH);

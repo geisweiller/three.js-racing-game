@@ -1,5 +1,6 @@
 import type { Vector3Tuple } from "./proximity";
 import { MAP_LIMIT } from "../data/trackData";
+import { defaultVehicle, type VehicleHandling } from "../data/vehicleOptions";
 
 export type MovementInput = {
   forward: boolean;
@@ -16,12 +17,7 @@ export type VehicleState = {
 
 export type VehicleSurface = "track" | "offroad";
 
-const MAX_FORWARD_SPEED = 6;
-const MAX_REVERSE_SPEED = -2.5;
-const ACCELERATION = 8;
-const REVERSE_ACCELERATION = 5;
-const FRICTION = 6;
-const STEER_RATE = 2.4;
+const defaultHandling = defaultVehicle.handling;
 
 export function getMovementVector(input: MovementInput): Vector3Tuple {
   const x = Number(input.right) - Number(input.left);
@@ -60,28 +56,29 @@ export function updateVehicle(
   input: MovementInput,
   delta: number,
   surface: VehicleSurface = "track",
+  handling: VehicleHandling = defaultHandling,
 ): VehicleState {
   const throttle = Number(input.forward) - Number(input.backward);
   const steering = Number(input.left) - Number(input.right);
-  const surfaceGrip = surface === "track" ? 1 : 0.55;
-  const surfaceSpeed = surface === "track" ? 1 : 0.48;
+  const surfaceGrip = surface === "track" ? 1 : handling.offroadGripMultiplier;
+  const surfaceSpeed = surface === "track" ? 1 : handling.offroadSpeedMultiplier;
   let speed = state.speed;
 
   if (throttle > 0) {
-    speed += ACCELERATION * delta;
+    speed += handling.acceleration * delta;
   } else if (throttle < 0) {
-    speed -= REVERSE_ACCELERATION * delta;
+    speed -= handling.reverseAcceleration * delta;
   } else {
-    speed = moveTowardZero(speed, FRICTION * delta);
+    speed = moveTowardZero(speed, handling.friction * delta);
   }
 
-  speed = clamp(speed, MAX_REVERSE_SPEED, MAX_FORWARD_SPEED * surfaceSpeed);
+  speed = clamp(speed, handling.maxReverseSpeed, handling.maxForwardSpeed * surfaceSpeed);
 
-  const speedRatio = Math.min(1, Math.abs(speed) / MAX_FORWARD_SPEED);
+  const speedRatio = Math.min(1, Math.abs(speed) / handling.maxForwardSpeed);
   const reverseSteeringMultiplier = speed < 0 ? -1 : 1;
   const heading =
     state.heading +
-    steering * STEER_RATE * surfaceGrip * speedRatio * reverseSteeringMultiplier * delta;
+    steering * handling.steerRate * surfaceGrip * speedRatio * reverseSteeringMultiplier * delta;
 
   const nextPosition = clampToMap([
     state.position[0] + Math.sin(heading) * speed * delta,
