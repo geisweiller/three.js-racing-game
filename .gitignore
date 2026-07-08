@@ -1,4 +1,6 @@
 .next/
+.DS_Store
+models/
 node_modules/
 out/
 dist/
