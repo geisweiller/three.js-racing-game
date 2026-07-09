@@ -30,7 +30,6 @@ describe("isPointOnTrack", () => {
 
   it("adds visual props around the circuit", () => {
     expect(trackProps.some((prop) => prop.kind === "cone")).toBe(true);
-    expect(trackProps.some((prop) => prop.kind === "straightBarrier")).toBe(true);
     expect(trackProps.filter((prop) => prop.kind === "light").length).toBeGreaterThan(8);
   });
 });

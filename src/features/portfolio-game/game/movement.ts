@@ -100,12 +100,11 @@ export function updateVehicle(
     speed + 0.25 * speed * Math.abs(speed),
     delta,
   );
-  const isTurningAtSpeed =
-    Math.abs(inputX) > 0.15 && Math.abs(speed) > handling.maxForwardSpeed * 0.42;
-  const driftIntensity = isTurningAtSpeed
-    ? Math.abs(speed - acceleration) / Math.max(1, handling.maxForwardSpeed) +
-      Math.abs(angularSpeed) * 0.55
-    : 0;
+  // Mesma formula do Starter Kit Racing: driftIntensity combina o slip entre
+  // velocidade/aceleracao com a inclinacao lateral visual do carro.
+  const starterBodyRoll = -(inputX / 5) * speed;
+  const driftIntensity =
+    Math.abs(speed - acceleration) + Math.abs(starterBodyRoll) * 2;
 
   const nextPosition = clampToMap([
     state.position[0] + Math.sin(heading) * speed * delta,

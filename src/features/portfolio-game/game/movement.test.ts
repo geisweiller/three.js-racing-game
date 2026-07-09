@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clampToMap, getMovementVector, updateVehicle } from "./movement";
+import { MAP_LIMIT } from "../data/trackData";
 import { getVehicleOption } from "../data/vehicleOptions";
 
 const baseState = {
@@ -30,7 +31,11 @@ describe("getMovementVector", () => {
 
 describe("clampToMap", () => {
   it("keeps the player inside the initial map bounds", () => {
-    expect(clampToMap([18, 0, -20])).toEqual([16, 0, -16]);
+    expect(clampToMap([MAP_LIMIT + 2, 0, -MAP_LIMIT - 4])).toEqual([
+      MAP_LIMIT,
+      0,
+      -MAP_LIMIT,
+    ]);
   });
 });
 
@@ -130,13 +135,19 @@ describe("updateVehicle", () => {
     expect(nextState.driftIntensity).toBeGreaterThan(0.5);
   });
 
-  it("does not report drift marks while driving straight at speed", () => {
-    const nextState = updateVehicle(
+  it("reports less slip while driving straight than while steering", () => {
+    const straightState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
       { forward: true, backward: false, left: false, right: false },
       0.5,
     );
+    const turningState = updateVehicle(
+      { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
+      { forward: true, backward: false, left: true, right: false },
+      0.5,
+    );
 
-    expect(nextState.driftIntensity).toBe(0);
+    expect(straightState.driftIntensity).toBeGreaterThan(0);
+    expect(turningState.driftIntensity).toBeGreaterThan(straightState.driftIntensity);
   });
 });

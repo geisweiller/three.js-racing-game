@@ -20,7 +20,7 @@ type PlayerProps = {
   input: MovementInput;
 };
 
-const TRACK_COLLISION_PADDING = -0.3;
+const VEHICLE_COLLIDER_RADIUS = 0.26;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -154,7 +154,7 @@ export function Player({ input }: PlayerProps) {
       surface,
       selectedVehicle.handling,
     );
-    const trackConstraint = constrainPointToTrack(nextState.position, TRACK_COLLISION_PADDING);
+    const trackConstraint = constrainPointToTrack(nextState.position, VEHICLE_COLLIDER_RADIUS);
     let impactIntensity = 0;
 
     impactCooldown.current = Math.max(0, impactCooldown.current - delta);

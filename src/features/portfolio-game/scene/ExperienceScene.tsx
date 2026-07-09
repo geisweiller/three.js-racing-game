@@ -9,6 +9,7 @@ import { Ground } from "./Ground";
 import { Lights } from "./Lights";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
+import { SmokeTrails } from "./SmokeTrails";
 import { VehicleAudio } from "./VehicleAudio";
 
 export function ExperienceScene() {
@@ -35,6 +36,7 @@ export function ExperienceScene() {
       <Ground />
       <RacingTrack />
       <DriftMarks />
+      <SmokeTrails />
       <Player input={input} />
       <FollowCamera />
       <VehicleAudio />

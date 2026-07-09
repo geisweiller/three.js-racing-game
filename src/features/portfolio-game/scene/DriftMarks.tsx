@@ -11,13 +11,13 @@ import {
   MeshBasicMaterial,
   Vector3,
 } from "three";
+import { getVehicleOption } from "../data/vehicleOptions";
 import { useGameStore } from "../game/useGameStore";
 
 const MAX_SEGMENTS = 4096;
 const VERTS_PER_SEGMENT = 6;
 const FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 3;
 const COLOR_FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 4;
-const MARK_WIDTH = 0.045;
 const GROUND_Y = 0.055;
 const MIN_SEGMENT_LENGTH = 0.02;
 const DRIFT_THRESHOLD = 0.55;
@@ -80,7 +80,7 @@ function createTrail(material: MeshBasicMaterial): Trail {
   };
 }
 
-function writeSegment(trail: Trail, from: Vector3, to: Vector3, alpha: number) {
+function writeSegment(trail: Trail, from: Vector3, to: Vector3, alpha: number, markWidth: number) {
   direction.subVectors(to, from);
   direction.y = 0;
   const length = direction.length();
@@ -90,7 +90,7 @@ function writeSegment(trail: Trail, from: Vector3, to: Vector3, alpha: number) {
   }
 
   direction.divideScalar(length);
-  side.set(direction.z, 0, -direction.x).multiplyScalar(MARK_WIDTH);
+  side.set(direction.z, 0, -direction.x).multiplyScalar(markWidth);
   pLeft.copy(from).add(side);
   pRight.copy(from).sub(side);
   cLeft.copy(to).add(side);
@@ -132,14 +132,20 @@ function writeSegment(trail: Trail, from: Vector3, to: Vector3, alpha: number) {
   }
 }
 
-function trackTrail(trail: Trail, wheelPosition: Vector3, intensity: number, emit: boolean) {
+function trackTrail(
+  trail: Trail,
+  wheelPosition: Vector3,
+  intensity: number,
+  emit: boolean,
+  markWidth: number,
+) {
   current.copy(wheelPosition);
   current.y = GROUND_Y;
 
   if (emit && trail.active) {
     const alpha = Math.min(1, Math.max(0, (intensity - DRIFT_THRESHOLD) / 1.4));
     previous.copy(trail.prev);
-    writeSegment(trail, previous, current, alpha);
+    writeSegment(trail, previous, current, alpha, markWidth);
   }
 
   trail.prev.copy(current);
@@ -166,6 +172,8 @@ export function DriftMarks() {
 
   useFrame(() => {
     const state = useGameStore.getState();
+    const vehicle = getVehicleOption(state.selectedVehicleId);
+    const { markWidth, rearAxleOffset, wheelHalfWidth } = vehicle.trail;
     const intensity = state.playerDriftIntensity;
     const emit =
       intensity > DRIFT_THRESHOLD &&
@@ -175,11 +183,9 @@ export function DriftMarks() {
     const forwardZ = Math.cos(state.playerHeading);
     const rightX = Math.cos(state.playerHeading);
     const rightZ = -Math.sin(state.playerHeading);
-    const rearOffset = -0.48;
-    const wheelHalfWidth = 0.31;
 
-    const rearCenterX = state.playerPosition[0] + forwardX * rearOffset;
-    const rearCenterZ = state.playerPosition[2] + forwardZ * rearOffset;
+    const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
+    const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
 
     trackTrail(
       trails[0],
@@ -190,6 +196,7 @@ export function DriftMarks() {
       ),
       intensity,
       emit,
+      markWidth,
     );
     trackTrail(
       trails[1],
@@ -200,6 +207,7 @@ export function DriftMarks() {
       ),
       intensity,
       emit,
+      markWidth,
     );
   });
 
