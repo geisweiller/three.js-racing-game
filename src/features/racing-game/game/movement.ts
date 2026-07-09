@@ -110,7 +110,8 @@ export function updateVehicle(
   // mesmos thresholds de drift marks, fumaca e skid.
   const starterSpeed = (speed / handling.maxForwardSpeed) * STARTER_MAX_SPEED;
   const starterAcceleration = (acceleration / handling.maxForwardSpeed) * STARTER_MAX_SPEED;
-  const starterBodyRoll = -(inputX / 5) * starterSpeed;
+  const starterInputX = -inputX;
+  const starterBodyRoll = -(starterInputX / 5) * starterSpeed;
   const driftIntensity =
     (Math.abs(starterSpeed - starterAcceleration) + Math.abs(starterBodyRoll) * 2) *
     handling.driftMultiplier;

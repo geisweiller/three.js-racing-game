@@ -17,8 +17,11 @@ export function getRearAxlePoints(
   const rightX = Math.cos(heading);
   const rightZ = -Math.sin(heading);
 
-  const rearCenterX = position[0] - forwardX * trail.rearAxleOffset;
-  const rearCenterZ = position[2] - forwardZ * trail.rearAxleOffset;
+  // Os GLBs atuais ficam visualmente com a frente oposta ao vetor usado pela
+  // simulacao para mover o carro. Por isso a traseira visual fica no sentido do
+  // heading de movimento, que e onde as marcas/fumaca devem nascer.
+  const rearCenterX = position[0] + forwardX * trail.rearAxleOffset;
+  const rearCenterZ = position[2] + forwardZ * trail.rearAxleOffset;
 
   return {
     left: [

@@ -274,8 +274,9 @@ export function Player({ input }: PlayerProps) {
       (nextState.speed / selectedVehicle.handling.maxForwardSpeed) * STARTER_MAX_SPEED;
     const starterAcceleration =
       (nextState.acceleration / selectedVehicle.handling.maxForwardSpeed) * STARTER_MAX_SPEED;
+    const starterInputX = -inputX;
     const bodyPitch = -MathUtils.clamp((starterSpeed - starterAcceleration) / 6, -0.35, 0.35);
-    const bodyRoll = -(inputX / 5) * starterSpeed;
+    const bodyRoll = -(starterInputX / 5) * starterSpeed;
     const steerAngle = inputX / 1.5;
     const body = bodyRef.current;
 

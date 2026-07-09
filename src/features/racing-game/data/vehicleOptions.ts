@@ -66,8 +66,8 @@ export type VehicleTrail = {
   // Largura visual de cada faixa escura desenhada no chao.
   // Deve acompanhar o tamanho do pneu: carros maiores podem usar marcas mais largas.
   markWidth: number;
-  // Distancia positiva do centro do carro ate o eixo traseiro.
-  // Aumentar empurra marcas/fumaca para a traseira; diminuir aproxima do centro.
+  // Distancia positiva do centro do carro ate o eixo traseiro visual.
+  // Aumentar empurra marcas/fumaca para tras do modelo; diminuir aproxima do centro.
   rearAxleOffset: number;
   // Metade da distancia lateral entre as rodas traseiras.
   // Aumentar separa as duas marcas; diminuir aproxima as marcas do centro do carro.
