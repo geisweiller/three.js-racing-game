@@ -1,5 +1,17 @@
 export type VehicleId = "kart" | "formula-1" | "race-car";
 
+export type VehicleVariantId = string;
+
+export type VehicleVariantOption = {
+  id: VehicleVariantId;
+  modelPath: string;
+  name: string;
+  previewScale?: number;
+  scale?: number;
+  swatch: string;
+  wheelOutset?: number;
+};
+
 export type VehicleOption = {
   // Identificador usado pelo estado global e pela tela de selecao.
   id: VehicleId;
@@ -11,10 +23,14 @@ export type VehicleOption = {
   handling: VehicleHandling;
   // Caminho publico do GLB carregado pelo useGLTF.
   modelPath: string;
+  // Variantes visuais reais. Cada swatch troca o GLB usado no jogo e no preview.
+  variants: VehicleVariantOption[];
   // Tamanho do modelo dentro da cena jogavel.
   scale: number;
   // Tamanho do modelo na tela de selecao; separado porque a camera do card e diferente.
   previewScale: number;
+  // Ajuste visual lateral das rodas no GLB, usado quando o modelo clipa com a carroceria.
+  wheelOutset?: number;
   // Ajustes visuais das marcas de pneu para alinhar com as rodas traseiras do modelo.
   trail: VehicleTrail;
 };
@@ -72,6 +88,13 @@ export const vehicleOptions: VehicleOption[] = [
       offroadGripMultiplier: 0.72,
     },
     modelPath: "/game-assets/cars/kart.glb",
+    variants: [
+      { id: "kart-oobi", modelPath: "/game-assets/cars/kart-oobi.glb", name: "Oobi", swatch: "#bca7ff" },
+      { id: "kart-oodi", modelPath: "/game-assets/cars/kart-oodi.glb", name: "Oodi", swatch: "#f5a6bb" },
+      { id: "kart-ooli", modelPath: "/game-assets/cars/kart-ooli.glb", name: "Ooli", swatch: "#f6d365" },
+      { id: "kart-oopi", modelPath: "/game-assets/cars/kart-oopi.glb", name: "Oopi", swatch: "#66cfb2" },
+      { id: "kart-oozi", modelPath: "/game-assets/cars/kart-oozi.glb", name: "Oozi", swatch: "#e8cdb7" },
+    ],
     // Escala do modelo durante o jogo.
     scale: 0.3,
     // Escala do modelo nos cards da tela inicial.
@@ -99,8 +122,21 @@ export const vehicleOptions: VehicleOption[] = [
       offroadGripMultiplier: 0.54,
     },
     modelPath: "/game-assets/cars/race-future.glb",
+    variants: [
+      { id: "future-blue", modelPath: "/game-assets/cars/race-future.glb", name: "Azul futuristica", swatch: "#6f8df6" },
+      {
+        id: "classic-red",
+        modelPath: "/game-assets/cars/formula-1.glb",
+        name: "Vermelha",
+        previewScale: 1.45,
+        scale: 0.38,
+        swatch: "#ff5a52",
+        wheelOutset: 0.05,
+      },
+    ],
     scale: 0.4,
     previewScale: 1.5,
+    wheelOutset: 0.1,
     trail: {
       markWidth: 0.06,
       rearAxleOffset: -0.4,
@@ -123,6 +159,15 @@ export const vehicleOptions: VehicleOption[] = [
       offroadGripMultiplier: 0.58,
     },
     modelPath: "/game-assets/cars/sedan-sports.glb",
+    variants: [
+      { id: "sedan-orange", modelPath: "/game-assets/cars/sedan-sports.glb", name: "Laranja", swatch: "#ff884d" },
+      {
+        id: "sport-hatch",
+        modelPath: "/game-assets/cars/hatchback-sports.glb",
+        name: "Sport hatch",
+        swatch: "#66cf9a",
+      },
+    ],
     scale: 0.4,
     previewScale: 1.25,
     trail: {
@@ -137,4 +182,8 @@ export const defaultVehicle = vehicleOptions[0];
 
 export function getVehicleOption(id: VehicleId) {
   return vehicleOptions.find((vehicle) => vehicle.id === id) ?? defaultVehicle;
+}
+
+export function getVehicleVariant(vehicle: VehicleOption, variantId: VehicleVariantId) {
+  return vehicle.variants.find((variant) => variant.id === variantId) ?? vehicle.variants[0];
 }

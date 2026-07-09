@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { START_HEADING, START_POSITION } from "../data/trackData";
 import type { PortfolioSectionId } from "../data/portfolioData";
-import { defaultVehicle, type VehicleId } from "../data/vehicleOptions";
+import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/vehicleOptions";
 import type { Vector3Tuple } from "./proximity";
 
 type GamePhase = "intro" | "playing";
@@ -11,6 +11,10 @@ type GamePhase = "intro" | "playing";
 type GameState = {
   activePointId: PortfolioSectionId | null;
   gamePhase: GamePhase;
+  currentLapTime: number;
+  bestLapTime: number | null;
+  lapCount: number;
+  lastLapTime: number | null;
   openedSectionId: PortfolioSectionId | null;
   playerHeading: number;
   playerPosition: Vector3Tuple;
@@ -22,11 +26,16 @@ type GameState = {
   playerImpactVersion: number;
   respawnVersion: number;
   selectedVehicleId: VehicleId;
+  selectedVehicleVariantId: VehicleVariantId;
+  completeLap: (lapTime: number) => void;
   requestRespawn: () => void;
+  resetLapTimer: () => void;
   setActivePointId: (id: PortfolioSectionId | null) => void;
+  setCurrentLapTime: (time: number) => void;
   setGamePhase: (phase: GamePhase) => void;
   setPlayerHeading: (heading: number) => void;
   setSelectedVehicleId: (id: VehicleId) => void;
+  setSelectedVehicleVariantId: (id: VehicleVariantId) => void;
   setOpenedSectionId: (id: PortfolioSectionId | null) => void;
   setPlayerPosition: (position: Vector3Tuple) => void;
   setVehicleTelemetry: (telemetry: {
@@ -40,7 +49,11 @@ type GameState = {
 
 export const useGameStore = create<GameState>((set) => ({
   activePointId: null,
+  bestLapTime: null,
+  currentLapTime: 0,
   gamePhase: "intro",
+  lapCount: 0,
+  lastLapTime: null,
   openedSectionId: null,
   playerHeading: START_HEADING,
   playerPosition: START_POSITION,
@@ -52,9 +65,18 @@ export const useGameStore = create<GameState>((set) => ({
   playerImpactVersion: 0,
   respawnVersion: 0,
   selectedVehicleId: defaultVehicle.id,
+  selectedVehicleVariantId: defaultVehicle.variants[0].id,
+  completeLap: (lapTime) =>
+    set((state) => ({
+      bestLapTime: state.bestLapTime === null ? lapTime : Math.min(state.bestLapTime, lapTime),
+      currentLapTime: 0,
+      lapCount: state.lapCount + 1,
+      lastLapTime: lapTime,
+    })),
   requestRespawn: () =>
     set((state) => ({
       activePointId: null,
+      currentLapTime: 0,
       playerAngularSpeed: 0,
       playerDriftIntensity: 0,
       playerImpactIntensity: 0,
@@ -64,10 +86,19 @@ export const useGameStore = create<GameState>((set) => ({
       playerThrottle: 0,
       respawnVersion: state.respawnVersion + 1,
     })),
+  resetLapTimer: () =>
+    set({
+      bestLapTime: null,
+      currentLapTime: 0,
+      lapCount: 0,
+      lastLapTime: null,
+    }),
   setActivePointId: (id) => set({ activePointId: id }),
+  setCurrentLapTime: (time) => set({ currentLapTime: time }),
   setGamePhase: (phase) => set({ gamePhase: phase }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
   setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
+  setSelectedVehicleVariantId: (id) => set({ selectedVehicleVariantId: id }),
   setOpenedSectionId: (id) => set({ openedSectionId: id }),
   setPlayerPosition: (position) => set({ playerPosition: position }),
   setVehicleTelemetry: (telemetry) =>

@@ -6,7 +6,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MathUtils, type Group, type Mesh, type Object3D } from "three";
-import { getVehicleOption } from "../data/vehicleOptions";
+import { getVehicleOption, getVehicleVariant } from "../data/vehicleOptions";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
 import { useGameStore } from "../game/useGameStore";
 import {
@@ -24,6 +24,8 @@ const VEHICLE_COLLIDER_RADIUS = 0.26;
 const TRACK_COLLISION_OUTSET = VEHICLE_COLLIDER_RADIUS / 2;
 const RESPAWN_BLINK_DURATION = 2.5;
 const RESPAWN_BLINK_INTERVAL = 0.16;
+const FINISH_TRIGGER_RADIUS = 1.3;
+const LAP_ARM_DISTANCE = 7;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -50,7 +52,7 @@ function lerpAngle(a: number, b: number, t: number) {
   return a + diff * t;
 }
 
-function cloneVehicle(source: Object3D): VehicleVisual {
+function cloneVehicle(source: Object3D, wheelOutset = 0): VehicleVisual {
   const model = source.clone(true);
   const wheels: Object3D[] = [];
   const frontWheels: Object3D[] = [];
@@ -67,6 +69,7 @@ function cloneVehicle(source: Object3D): VehicleVisual {
 
     if (name.includes("wheel")) {
       child.rotation.order = "YXZ";
+      child.position.x += Math.sign(child.position.x) * wheelOutset;
       wheels.push(child);
 
       if (name.includes("front")) {
@@ -87,7 +90,6 @@ function cloneVehicle(source: Object3D): VehicleVisual {
       firstBodyCandidate = child;
     }
   });
-
   return {
     body: body ?? firstBodyCandidate,
     frontWheels,
@@ -99,6 +101,8 @@ function cloneVehicle(source: Object3D): VehicleVisual {
 export function Player({ input }: PlayerProps) {
   const playerRef = useRef<Group>(null);
   const impactCooldown = useRef(0);
+  const lapStartTime = useRef(0);
+  const lapArmed = useRef(false);
   const respawnBlinkRemaining = useRef(0);
   const vehicleState = useRef<VehicleState>({
     acceleration: 0,
@@ -111,12 +115,22 @@ export function Player({ input }: PlayerProps) {
   const openedSectionId = useGameStore((state) => state.openedSectionId);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
+  const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
+  const completeLap = useGameStore((state) => state.completeLap);
   const setPlayerHeading = useGameStore((state) => state.setPlayerHeading);
   const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
+  const setCurrentLapTime = useGameStore((state) => state.setCurrentLapTime);
   const setVehicleTelemetry = useGameStore((state) => state.setVehicleTelemetry);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
-  const { scene } = useGLTF(selectedVehicle.modelPath);
-  const vehicleVisual = useMemo(() => cloneVehicle(scene), [scene]);
+  const selectedVehicleVariant = getVehicleVariant(selectedVehicle, selectedVehicleVariantId);
+  const vehicleModelPath = selectedVehicleVariant.modelPath;
+  const vehicleScale = selectedVehicleVariant.scale ?? selectedVehicle.scale;
+  const vehicleWheelOutset = selectedVehicleVariant.wheelOutset ?? selectedVehicle.wheelOutset;
+  const { scene } = useGLTF(vehicleModelPath);
+  const vehicleVisual = useMemo(
+    () => cloneVehicle(scene, vehicleWheelOutset),
+    [scene, vehicleWheelOutset],
+  );
   const bodyRef = useRef<Object3D | null>(null);
   const frontWheelsRef = useRef<Object3D[]>([]);
   const wheelsRef = useRef<Object3D[]>([]);
@@ -128,6 +142,8 @@ export function Player({ input }: PlayerProps) {
   }, [vehicleVisual]);
 
   useEffect(() => {
+    lapArmed.current = false;
+    lapStartTime.current = 0;
     respawnBlinkRemaining.current = RESPAWN_BLINK_DURATION;
 
     vehicleState.current = {
@@ -145,7 +161,7 @@ export function Player({ input }: PlayerProps) {
     }
   }, [respawnVersion]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const player = playerRef.current;
 
     if (!player) {
@@ -158,7 +174,12 @@ export function Player({ input }: PlayerProps) {
       Math.floor(respawnBlinkRemaining.current / RESPAWN_BLINK_INTERVAL) % 2 === 0;
 
     if (openedSectionId) {
+      lapStartTime.current += delta;
       return;
+    }
+
+    if (lapStartTime.current === 0) {
+      lapStartTime.current = state.clock.elapsedTime;
     }
 
     const surface = isPointOnTrack(vehicleState.current.position, 0.35) ? "track" : "offroad";
@@ -196,6 +217,25 @@ export function Player({ input }: PlayerProps) {
     }
 
     vehicleState.current = nextState;
+
+    const distanceFromFinish = Math.hypot(
+      nextState.position[0] - START_POSITION[0],
+      nextState.position[2] - START_POSITION[2],
+    );
+
+    if (distanceFromFinish > LAP_ARM_DISTANCE) {
+      lapArmed.current = true;
+    }
+
+    if (lapArmed.current && distanceFromFinish <= FINISH_TRIGGER_RADIUS && nextState.speed > 0.5) {
+      const lapTime = state.clock.elapsedTime - lapStartTime.current;
+
+      completeLap(lapTime);
+      lapStartTime.current = state.clock.elapsedTime;
+      lapArmed.current = false;
+    } else {
+      setCurrentLapTime(state.clock.elapsedTime - lapStartTime.current);
+    }
 
     player.position.set(...nextState.position);
     player.rotation.y = nextState.heading;
@@ -255,7 +295,7 @@ export function Player({ input }: PlayerProps) {
 
   return (
     <group ref={playerRef} position={START_POSITION} rotation={[0, START_HEADING, 0]}>
-      <primitive key={selectedVehicle.modelPath} object={vehicleVisual.model} scale={selectedVehicle.scale} />
+      <primitive key={vehicleModelPath} object={vehicleVisual.model} scale={vehicleScale} />
     </group>
   );
 }
