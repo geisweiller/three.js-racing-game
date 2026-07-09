@@ -103,6 +103,12 @@ export function updateVehicle(
     speed + 0.25 * speed * Math.abs(speed),
     delta,
   );
+  // Efeito visual legado: calcula apenas a intensidade das marcas/fumaca.
+  // A fisica do carro segue sem a logica de drift do Starter Kit Racing.
+  const visualBodyRoll = -inputX * Math.abs(speed) * 0.24;
+  const tireEffectIntensity =
+    Math.abs(speed - acceleration) + Math.abs(visualBodyRoll) * 2;
+
   const nextPosition = clampToMap([
     state.position[0] + Math.sin(heading) * speed * delta,
     0,
@@ -112,7 +118,7 @@ export function updateVehicle(
   return {
     acceleration,
     angularSpeed,
-    driftIntensity: 0,
+    driftIntensity: tireEffectIntensity,
     position: nextPosition,
     heading,
     speed,

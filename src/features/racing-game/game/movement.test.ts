@@ -131,17 +131,17 @@ describe("updateVehicle", () => {
     expect(kartState.heading).toBeGreaterThan(raceCarState.heading);
   });
 
-  it("keeps drift disabled while steering at speed", () => {
+  it("reports tire effect intensity while steering at speed", () => {
     const nextState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
       input({ forward: true, left: true }),
       0.5,
     );
 
-    expect(nextState.driftIntensity).toBe(0);
+    expect(nextState.driftIntensity).toBeGreaterThan(0.5);
   });
 
-  it("keeps drift disabled while driving straight or turning", () => {
+  it("reports less tire effect while driving straight than while steering", () => {
     const straightState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
       input({ forward: true }),
@@ -153,8 +153,8 @@ describe("updateVehicle", () => {
       0.5,
     );
 
-    expect(straightState.driftIntensity).toBe(0);
-    expect(turningState.driftIntensity).toBe(0);
+    expect(straightState.driftIntensity).toBeGreaterThan(0);
+    expect(turningState.driftIntensity).toBeGreaterThan(straightState.driftIntensity);
   });
 
   it("uses nitro boost to raise acceleration and top speed while active", () => {

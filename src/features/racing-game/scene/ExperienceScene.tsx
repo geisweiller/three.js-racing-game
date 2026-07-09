@@ -3,12 +3,14 @@
 import { useEffect } from "react";
 import { useGameStore } from "../game/useGameStore";
 import { useKeyboardControls } from "../game/useKeyboardControls";
+import { DriftMarks } from "./DriftMarks";
 import { FollowCamera } from "./FollowCamera";
 import { Ground } from "./Ground";
 import { Lights } from "./Lights";
 import { NitroPickups } from "./NitroPickups";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
+import { SmokeTrails } from "./SmokeTrails";
 import { VehicleAudio } from "./VehicleAudio";
 
 export function ExperienceScene() {
@@ -35,6 +37,8 @@ export function ExperienceScene() {
       <Ground />
       <RacingTrack />
       <NitroPickups />
+      <DriftMarks />
+      <SmokeTrails />
       <Player input={input} />
       <FollowCamera />
       <VehicleAudio />
