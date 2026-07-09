@@ -13,6 +13,7 @@ import {
 } from "three";
 import { getVehicleOption } from "../data/vehicleOptions";
 import { useGameStore } from "../game/useGameStore";
+import { getRearAxlePoints } from "../game/vehicleTrail";
 
 const MAX_SEGMENTS = 4096;
 const VERTS_PER_SEGMENT = 6;
@@ -20,9 +21,8 @@ const FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 3;
 const COLOR_FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 4;
 const GROUND_Y = 0.055;
 const MIN_SEGMENT_LENGTH = 0.02;
-const DRIFT_THRESHOLD = 0.55;
-const MIN_DRIFT_SPEED = 2.6;
-const MIN_DRIFT_TURN_RATE = 0.35;
+const DRIFT_THRESHOLD = 0.5;
+const MIN_DRIFT_SPEED = 0.15;
 
 type Trail = {
   active: boolean;
@@ -173,38 +173,28 @@ export function DriftMarks() {
   useFrame(() => {
     const state = useGameStore.getState();
     const vehicle = getVehicleOption(state.selectedVehicleId);
-    const { markWidth, rearAxleOffset, wheelHalfWidth } = vehicle.trail;
+    const { markWidth } = vehicle.trail;
     const intensity = state.playerDriftIntensity;
     const emit =
       intensity > DRIFT_THRESHOLD &&
-      Math.abs(state.playerSpeed) > MIN_DRIFT_SPEED &&
-      Math.abs(state.playerAngularSpeed) > MIN_DRIFT_TURN_RATE;
-    const forwardX = Math.sin(state.playerHeading);
-    const forwardZ = Math.cos(state.playerHeading);
-    const rightX = Math.cos(state.playerHeading);
-    const rightZ = -Math.sin(state.playerHeading);
-
-    const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
-    const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
+      Math.abs(state.playerSpeed) > MIN_DRIFT_SPEED;
+    const wheelPoints = getRearAxlePoints(
+      state.playerPosition,
+      state.playerHeading,
+      vehicle.trail,
+      GROUND_Y,
+    );
 
     trackTrail(
       trails[0],
-      new Vector3(
-        rearCenterX - rightX * wheelHalfWidth,
-        GROUND_Y,
-        rearCenterZ - rightZ * wheelHalfWidth,
-      ),
+      new Vector3(...wheelPoints.left),
       intensity,
       emit,
       markWidth,
     );
     trackTrail(
       trails[1],
-      new Vector3(
-        rearCenterX + rightX * wheelHalfWidth,
-        GROUND_Y,
-        rearCenterZ + rightZ * wheelHalfWidth,
-      ),
+      new Vector3(...wheelPoints.right),
       intensity,
       emit,
       markWidth,

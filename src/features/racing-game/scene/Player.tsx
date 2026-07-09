@@ -30,6 +30,7 @@ const FINISH_TRIGGER_RADIUS = 1.3;
 const LAP_ARM_DISTANCE = 7;
 const NITRO_BOOST_MULTIPLIER = 1.42;
 const NITRO_CONSUME_PER_SECOND = 25;
+const STARTER_MAX_SPEED = 1.5;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -269,24 +270,12 @@ export function Player({ input }: PlayerProps) {
     player.position.set(...nextState.position);
     player.rotation.y = nextState.heading;
     const inputX = Number(input.left) - Number(input.right);
-    const speed01 = MathUtils.clamp(
-      Math.abs(nextState.speed) / selectedVehicle.handling.maxForwardSpeed,
-      0,
-      1,
-    );
-    const acceleration01 =
-      nextState.acceleration /
-      (selectedVehicle.handling.maxForwardSpeed +
-        0.25 *
-          selectedVehicle.handling.maxForwardSpeed *
-          selectedVehicle.handling.maxForwardSpeed);
-    const bodyPitch =
-      -MathUtils.clamp(
-        nextState.speed / selectedVehicle.handling.maxForwardSpeed - acceleration01,
-        -0.8,
-        0.8,
-      ) * 0.34;
-    const bodyRoll = -inputX * speed01 * 0.24;
+    const starterSpeed =
+      (nextState.speed / selectedVehicle.handling.maxForwardSpeed) * STARTER_MAX_SPEED;
+    const starterAcceleration =
+      (nextState.acceleration / selectedVehicle.handling.maxForwardSpeed) * STARTER_MAX_SPEED;
+    const bodyPitch = -MathUtils.clamp((starterSpeed - starterAcceleration) / 6, -0.35, 0.35);
+    const bodyRoll = -(inputX / 5) * starterSpeed;
     const steerAngle = inputX / 1.5;
     const body = bodyRef.current;
 

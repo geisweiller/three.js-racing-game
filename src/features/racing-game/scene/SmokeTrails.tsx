@@ -17,6 +17,7 @@ import {
 import { getVehicleOption } from "../data/vehicleOptions";
 import { withAssetBase } from "../game/assetPath";
 import { useGameStore } from "../game/useGameStore";
+import { getRearAxlePoints } from "../game/vehicleTrail";
 
 const POOL_SIZE = 1280;
 const PARTICLES_PER_EMIT = 1;
@@ -24,9 +25,7 @@ const EMIT_JITTER = 0.15;
 const BASE_SIZE = 0.65;
 const MAX_LIFE = 1.4;
 const INV_MAX_LIFE = 1 / MAX_LIFE;
-const DRIFT_THRESHOLD = 0.55;
-const MIN_DRIFT_SPEED = 2.6;
-const MIN_DRIFT_TURN_RATE = 0.35;
+const DRIFT_THRESHOLD = 0.7;
 const ROAD_SMOKE_Y = 0.24;
 
 type SmokeParticle = {
@@ -152,27 +151,23 @@ export function SmokeTrails() {
   useFrame((_, delta) => {
     const state = useGameStore.getState();
     const selectedVehicle = getVehicleOption(state.selectedVehicleId);
-    const shouldEmit =
-      state.playerDriftIntensity > DRIFT_THRESHOLD &&
-      Math.abs(state.playerSpeed) > MIN_DRIFT_SPEED &&
-      Math.abs(state.playerAngularSpeed) > MIN_DRIFT_TURN_RATE;
+    const shouldEmit = state.playerDriftIntensity > DRIFT_THRESHOLD;
     let aliveCount = 0;
 
     if (shouldEmit) {
-      const { rearAxleOffset, wheelHalfWidth } = selectedVehicle.trail;
-      const forwardX = Math.sin(state.playerHeading);
-      const forwardZ = Math.cos(state.playerHeading);
-      const rightX = Math.cos(state.playerHeading);
-      const rightZ = -Math.sin(state.playerHeading);
-      const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
-      const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
       // O Starter emite em container.y + 0.05. Aqui os GLBs da pista ficam
       // mais altos depois da escala, entao mantemos a mesma logica e elevamos
       // apenas o plano de emissao para a fumaça nao nascer dentro do asfalto.
       const roadY = state.playerPosition[1] + ROAD_SMOKE_Y;
+      const wheelPoints = getRearAxlePoints(
+        state.playerPosition,
+        state.playerHeading,
+        selectedVehicle.trail,
+        roadY,
+      );
 
-      wheelLeft.set(rearCenterX - rightX * wheelHalfWidth, roadY, rearCenterZ - rightZ * wheelHalfWidth);
-      wheelRight.set(rearCenterX + rightX * wheelHalfWidth, roadY, rearCenterZ + rightZ * wheelHalfWidth);
+      wheelLeft.set(...wheelPoints.left);
+      wheelRight.set(...wheelPoints.right);
 
       for (let i = 0; i < PARTICLES_PER_EMIT; i += 1) {
         emitAt(system, wheelLeft.x, roadY, wheelLeft.z);
