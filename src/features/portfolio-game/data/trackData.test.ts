@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isPointOnTrack, roadTiles, START_POSITION, trackProps } from "./trackData";
+import {
+  constrainPointToTrack,
+  isPointOnTrack,
+  roadTiles,
+  START_POSITION,
+  trackProps,
+} from "./trackData";
 
 describe("isPointOnTrack", () => {
   it("recognizes the start line as part of the track", () => {
@@ -8,6 +14,13 @@ describe("isPointOnTrack", () => {
 
   it("recognizes points far outside the racing loop as off road", () => {
     expect(isPointOnTrack([13, 0, 13])).toBe(false);
+  });
+
+  it("projects off-road points back to the nearest road segment", () => {
+    const constrained = constrainPointToTrack([13, 0, 13]);
+
+    expect(constrained.collided).toBe(true);
+    expect(isPointOnTrack(constrained.position)).toBe(true);
   });
 
   it("creates a closed circuit with straights and corners", () => {

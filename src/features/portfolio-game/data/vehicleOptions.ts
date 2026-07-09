@@ -1,4 +1,4 @@
-export type VehicleId = "kart" | "formula-1" | "ambulance";
+export type VehicleId = "kart" | "formula-1" | "race-car";
 
 export type VehicleOption = {
   id: VehicleId;
@@ -37,7 +37,7 @@ export const vehicleOptions: VehicleOption[] = [
       offroadGripMultiplier: 0.72,
     },
     modelPath: "/game-assets/cars/kart.glb",
-    scale: 0.72,
+    scale: 0.3,
     previewScale: 1.7,
   },
   {
@@ -54,26 +54,26 @@ export const vehicleOptions: VehicleOption[] = [
       offroadSpeedMultiplier: 0.42,
       offroadGripMultiplier: 0.54,
     },
-    modelPath: "/game-assets/cars/formula-1.glb",
-    scale: 0.78,
+    modelPath: "/game-assets/cars/race-future.glb",
+    scale: 0.4,
     previewScale: 1.5,
   },
   {
-    id: "ambulance",
-    name: "Ambulancia",
-    description: "Mais lenta, pesada e estavel.",
+    id: "race-car",
+    name: "Carro de corrida",
+    description: "Equilibrado, rapido e mais estavel que a F1.",
     handling: {
-      maxForwardSpeed: 4.2,
-      maxReverseSpeed: -1.8,
-      acceleration: 5.4,
-      reverseAcceleration: 3.6,
-      friction: 4.4,
-      steerRate: 2.2,
-      offroadSpeedMultiplier: 0.46,
-      offroadGripMultiplier: 0.48,
+      maxForwardSpeed: 6.6,
+      maxReverseSpeed: -2.2,
+      acceleration: 8.2,
+      reverseAcceleration: 4.6,
+      friction: 5.2,
+      steerRate: 2.75,
+      offroadSpeedMultiplier: 0.48,
+      offroadGripMultiplier: 0.58,
     },
-    modelPath: "/game-assets/cars/ambulance.glb",
-    scale: 0.82,
+    modelPath: "/game-assets/cars/sedan-sports.glb",
+    scale: 0.4,
     previewScale: 1.25,
   },
 ];

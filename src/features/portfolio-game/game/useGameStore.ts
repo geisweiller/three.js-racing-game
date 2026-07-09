@@ -18,6 +18,8 @@ type GameState = {
   playerSpeed: number;
   playerThrottle: number;
   playerDriftIntensity: number;
+  playerImpactIntensity: number;
+  playerImpactVersion: number;
   respawnVersion: number;
   selectedVehicleId: VehicleId;
   requestRespawn: () => void;
@@ -30,6 +32,7 @@ type GameState = {
   setVehicleTelemetry: (telemetry: {
     angularSpeed: number;
     driftIntensity: number;
+    impactIntensity?: number;
     speed: number;
     throttle: number;
   }) => void;
@@ -45,6 +48,8 @@ export const useGameStore = create<GameState>((set) => ({
   playerSpeed: 0,
   playerThrottle: 0,
   playerDriftIntensity: 0,
+  playerImpactIntensity: 0,
+  playerImpactVersion: 0,
   respawnVersion: 0,
   selectedVehicleId: defaultVehicle.id,
   requestRespawn: () =>
@@ -52,6 +57,7 @@ export const useGameStore = create<GameState>((set) => ({
       activePointId: null,
       playerAngularSpeed: 0,
       playerDriftIntensity: 0,
+      playerImpactIntensity: 0,
       playerHeading: START_HEADING,
       playerPosition: START_POSITION,
       playerSpeed: 0,
@@ -65,10 +71,15 @@ export const useGameStore = create<GameState>((set) => ({
   setOpenedSectionId: (id) => set({ openedSectionId: id }),
   setPlayerPosition: (position) => set({ playerPosition: position }),
   setVehicleTelemetry: (telemetry) =>
-    set({
+    set((state) => ({
       playerAngularSpeed: telemetry.angularSpeed,
       playerDriftIntensity: telemetry.driftIntensity,
+      playerImpactIntensity: telemetry.impactIntensity ?? 0,
+      playerImpactVersion:
+        telemetry.impactIntensity && telemetry.impactIntensity > 0.05
+          ? state.playerImpactVersion + 1
+          : state.playerImpactVersion,
       playerSpeed: telemetry.speed,
       playerThrottle: telemetry.throttle,
-    }),
+    })),
 }));

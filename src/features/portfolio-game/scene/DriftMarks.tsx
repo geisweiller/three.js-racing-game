@@ -175,8 +175,8 @@ export function DriftMarks() {
     const forwardZ = Math.cos(state.playerHeading);
     const rightX = Math.cos(state.playerHeading);
     const rightZ = -Math.sin(state.playerHeading);
-    const rearOffset = -0.58;
-    const wheelHalfWidth = 0.38;
+    const rearOffset = -0.48;
+    const wheelHalfWidth = 0.31;
 
     const rearCenterX = state.playerPosition[0] + forwardX * rearOffset;
     const rearCenterZ = state.playerPosition[2] + forwardZ * rearOffset;

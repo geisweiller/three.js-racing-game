@@ -2,7 +2,7 @@ import { roadTiles, trackProps } from "../data/trackData";
 import { GlbModel } from "./GlbModel";
 
 const ROAD_BASE_PATH = "/game-assets/roads";
-const ROAD_MODEL_SCALE = 2.05;
+const ROAD_MODEL_SCALE = 2.12;
 const roadModelByKind = {
   curve: "road-bend.glb",
   roundabout: "road-roundabout.glb",

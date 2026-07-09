@@ -25,10 +25,11 @@ export type TrackProp = {
 };
 
 export const ROAD_TILE_SIZE = 1.85;
-export const ROAD_WIDTH = 3.05;
+export const ROAD_WIDTH = 3.22;
 export const START_POSITION: Vector3Tuple = [0, 0, -7.4];
 export const START_HEADING = Math.PI / 2;
 export const MAP_LIMIT = 16;
+const TRACK_EDGE_EPSILON = 0.001;
 
 const left = -7.4;
 const right = 7.4;
@@ -230,4 +231,46 @@ export function isPointOnTrack(position: Vector3Tuple, padding = 0) {
       Math.abs(position[2] - segment.center[2]) <= halfDepth
     );
   });
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function constrainPointToTrack(position: Vector3Tuple, padding = 0) {
+  if (isPointOnTrack(position, padding)) {
+    return {
+      collided: false,
+      position,
+    };
+  }
+
+  let closestPosition = position;
+  let closestDistanceSq = Number.POSITIVE_INFINITY;
+
+  for (const segment of roadSegments) {
+    const halfWidth = segment.size[0] / 2 + padding;
+    const halfDepth = segment.size[1] / 2 + padding;
+    const x = clamp(
+      position[0],
+      segment.center[0] - halfWidth + TRACK_EDGE_EPSILON,
+      segment.center[0] + halfWidth - TRACK_EDGE_EPSILON,
+    );
+    const z = clamp(
+      position[2],
+      segment.center[2] - halfDepth + TRACK_EDGE_EPSILON,
+      segment.center[2] + halfDepth - TRACK_EDGE_EPSILON,
+    );
+    const distanceSq = (position[0] - x) ** 2 + (position[2] - z) ** 2;
+
+    if (distanceSq < closestDistanceSq) {
+      closestDistanceSq = distanceSq;
+      closestPosition = [x, position[1], z];
+    }
+  }
+
+  return {
+    collided: true,
+    position: closestPosition,
+  };
 }

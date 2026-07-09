@@ -74,9 +74,9 @@ describe("updateVehicle", () => {
     expect(nextState.speed).toBeLessThan(3.2);
   });
 
-  it("uses vehicle handling to make the formula 1 faster than the ambulance", () => {
+  it("uses vehicle handling to make the formula 1 faster than the race car", () => {
     const formula = getVehicleOption("formula-1");
-    const ambulance = getVehicleOption("ambulance");
+    const raceCar = getVehicleOption("race-car");
     const input = { forward: true, backward: false, left: false, right: false };
 
     const formulaState = updateVehicle(
@@ -86,20 +86,20 @@ describe("updateVehicle", () => {
       "track",
       formula.handling,
     );
-    const ambulanceState = updateVehicle(
+    const raceCarState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       input,
       1,
       "track",
-      ambulance.handling,
+      raceCar.handling,
     );
 
-    expect(formulaState.speed).toBeGreaterThan(ambulanceState.speed);
+    expect(formulaState.speed).toBeGreaterThan(raceCarState.speed);
   });
 
-  it("uses vehicle handling to make the kart turn easier than the ambulance", () => {
+  it("uses vehicle handling to make the kart turn easier than the race car", () => {
     const kart = getVehicleOption("kart");
-    const ambulance = getVehicleOption("ambulance");
+    const raceCar = getVehicleOption("race-car");
     const input = { forward: true, backward: false, left: true, right: false };
 
     const kartState = updateVehicle(
@@ -109,15 +109,15 @@ describe("updateVehicle", () => {
       "track",
       kart.handling,
     );
-    const ambulanceState = updateVehicle(
+    const raceCarState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
       input,
       0.25,
       "track",
-      ambulance.handling,
+      raceCar.handling,
     );
 
-    expect(kartState.heading).toBeGreaterThan(ambulanceState.heading);
+    expect(kartState.heading).toBeGreaterThan(raceCarState.heading);
   });
 
   it("reports drift intensity while steering at speed", () => {
