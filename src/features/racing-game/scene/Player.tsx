@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MathUtils, type Group, type Mesh, type Object3D, type PointLight } from "three";
 import { getVehicleOption, getVehicleVariant } from "../data/vehicleOptions";
+import { withAssetBase } from "../game/assetPath";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
 import { useGameStore } from "../game/useGameStore";
 import {
@@ -131,9 +132,10 @@ export function Player({ input }: PlayerProps) {
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const selectedVehicleVariant = getVehicleVariant(selectedVehicle, selectedVehicleVariantId);
   const vehicleModelPath = selectedVehicleVariant.modelPath;
+  const vehicleAssetPath = withAssetBase(vehicleModelPath);
   const vehicleScale = selectedVehicleVariant.scale ?? selectedVehicle.scale;
   const vehicleWheelOutset = selectedVehicleVariant.wheelOutset ?? selectedVehicle.wheelOutset;
-  const { scene } = useGLTF(vehicleModelPath);
+  const { scene } = useGLTF(vehicleAssetPath);
   const vehicleVisual = useMemo(
     () => cloneVehicle(scene, vehicleWheelOutset),
     [scene, vehicleWheelOutset],
@@ -323,7 +325,7 @@ export function Player({ input }: PlayerProps) {
   return (
     <group ref={playerRef} position={START_POSITION} rotation={[0, START_HEADING, 0]}>
       <pointLight ref={nitroLightRef} color="#66cfb2" distance={3.4} intensity={0} position={[0, 0.75, 0]} />
-      <primitive key={vehicleModelPath} object={vehicleVisual.model} scale={vehicleScale} />
+      <primitive key={vehicleAssetPath} object={vehicleVisual.model} scale={vehicleScale} />
     </group>
   );
 }

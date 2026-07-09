@@ -16,6 +16,33 @@ function formatLapTime(time: number | null) {
   return `${minutes}:${seconds}.${milliseconds}`;
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
+
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+) {
+  const start = polarToCartesian(centerX, centerY, radius, endAngle);
+  const end = polarToCartesian(centerX, centerY, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+
 export function GameHud() {
   const bestLapTime = useGameStore((state) => state.bestLapTime);
   const currentLapTime = useGameStore((state) => state.currentLapTime);
@@ -30,6 +57,7 @@ export function GameHud() {
   const setGamePhase = useGameStore((state) => state.setGamePhase);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const speedKmh = Math.round(Math.abs(playerSpeed) * 18);
+  const maxSpeedKmh = Math.ceil((selectedVehicle.handling.maxForwardSpeed * 18 * 1.45) / 10) * 10;
 
   function returnToMenu() {
     requestRespawn();
@@ -209,23 +237,102 @@ export function GameHud() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-5 right-5 min-w-32 rounded-3xl border border-white/10 bg-[#111418]/82 px-5 py-4 text-right shadow-2xl backdrop-blur"
+        className="absolute bottom-28 right-4 md:bottom-5 md:right-5"
         initial={{ opacity: 0, x: 18, y: 8 }}
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ delay: 0.2, duration: 0.25 }}
       >
-        <span className="block text-[0.62rem] uppercase text-[#f8f3e8]/45">Km/h</span>
+        <Speedometer maxSpeed={maxSpeedKmh} nitroActive={nitroActive} speed={speedKmh} />
+      </motion.div>
+    </div>
+  );
+}
+
+function Speedometer({
+  maxSpeed,
+  nitroActive,
+  speed,
+}: {
+  maxSpeed: number;
+  nitroActive: boolean;
+  speed: number;
+}) {
+  const startAngle = -118;
+  const endAngle = 118;
+  const angleRange = endAngle - startAngle;
+  const centerX = 100;
+  const centerY = 112;
+  const radius = 72;
+  const progress = clamp(speed / maxSpeed, 0, 1);
+  const needleAngle = startAngle + progress * angleRange;
+  const activeArc = describeArc(centerX, centerY, radius, startAngle, needleAngle);
+  const baseArc = describeArc(centerX, centerY, radius, startAngle, endAngle);
+  const ticks = Array.from({ length: 9 }, (_, index) => {
+    const tickProgress = index / 8;
+    const angle = startAngle + tickProgress * angleRange;
+    const outer = polarToCartesian(centerX, centerY, radius + 7, angle);
+    const inner = polarToCartesian(centerX, centerY, index % 2 === 0 ? radius - 10 : radius - 5, angle);
+
+    return {
+      angle,
+      inner,
+      label: Math.round(maxSpeed * tickProgress),
+      outer,
+      showLabel: index % 2 === 0,
+    };
+  });
+
+  return (
+    <div className="relative h-44 w-52 rounded-3xl border border-white/10 bg-[#111418]/84 p-2 shadow-2xl backdrop-blur">
+      <svg aria-label={`Velocimetro ${speed} km/h`} className="h-full w-full" role="img" viewBox="0 0 200 168">
+        <path d={baseArc} fill="none" stroke="rgb(255 255 255 / 0.12)" strokeLinecap="round" strokeWidth="10" />
+        <motion.path
+          d={activeArc}
+          fill="none"
+          stroke={nitroActive ? "#66cfb2" : "#f6d365"}
+          strokeLinecap="round"
+          strokeWidth="10"
+          transition={{ duration: 0.16 }}
+        />
+        {ticks.map((tick) => (
+          <g key={tick.angle}>
+            <line
+              stroke="rgb(248 243 232 / 0.45)"
+              strokeLinecap="round"
+              strokeWidth={tick.showLabel ? 2 : 1}
+              x1={tick.inner.x}
+              x2={tick.outer.x}
+              y1={tick.inner.y}
+              y2={tick.outer.y}
+            />
+            {tick.showLabel ? (
+              <text
+                fill="rgb(248 243 232 / 0.52)"
+                fontSize="8"
+                fontWeight="700"
+                textAnchor="middle"
+                x={polarToCartesian(centerX, centerY, radius - 26, tick.angle).x}
+                y={polarToCartesian(centerX, centerY, radius - 26, tick.angle).y + 3}
+              >
+                {tick.label}
+              </text>
+            ) : null}
+          </g>
+        ))}
+      </svg>
+      <div className="absolute inset-x-0 bottom-3 text-center">
         <motion.strong
-          className="block text-4xl leading-none tabular-nums"
+          className="block text-3xl leading-none tabular-nums"
           animate={{
             color: nitroActive ? "#66cfb2" : "#f8f3e8",
-            scale: nitroActive ? 1.08 : 1,
+            scale: nitroActive ? 1.06 : 1,
           }}
           transition={{ duration: 0.18 }}
         >
-          {speedKmh}
+          {speed}
         </motion.strong>
-      </motion.div>
+        <span className="text-[0.58rem] font-semibold uppercase text-[#f8f3e8]/45">Km/h</span>
+      </div>
     </div>
   );
 }

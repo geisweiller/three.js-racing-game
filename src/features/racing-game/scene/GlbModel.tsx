@@ -3,6 +3,7 @@
 import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
 import type { Mesh, Object3D } from "three";
+import { withAssetBase } from "../game/assetPath";
 
 type GlbModelProps = {
   path: string;
@@ -29,7 +30,8 @@ function cloneWithShadows(source: Object3D) {
 }
 
 export function GlbModel({ path, modelScale = 1, position, rotation }: GlbModelProps) {
-  const { scene } = useGLTF(path);
+  const assetPath = withAssetBase(path);
+  const { scene } = useGLTF(assetPath);
   const model = useMemo(() => cloneWithShadows(scene), [scene]);
 
   return (

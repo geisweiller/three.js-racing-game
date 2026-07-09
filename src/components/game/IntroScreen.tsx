@@ -4,7 +4,7 @@ import { Button, Card, Chip } from "@heroui/react";
 import { Html } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import {
   getVehicleVariant,
   vehicleOptions,
@@ -13,8 +13,6 @@ import {
 } from "@/features/racing-game/data/vehicleOptions";
 import { useGameStore } from "@/features/racing-game/game/useGameStore";
 import { GlbModel } from "@/features/racing-game/scene/GlbModel";
-
-let vehicleCardIntroHasPlayed = false;
 
 function ModelLoading() {
   return (
@@ -49,14 +47,6 @@ function VehiclePreview({ variant, vehicle }: { variant: VehicleVariantOption; v
 }
 
 export function IntroScreen() {
-  const [shouldPlayCardIntro] = useState(() => {
-    if (vehicleCardIntroHasPlayed) {
-      return false;
-    }
-
-    vehicleCardIntroHasPlayed = true;
-    return true;
-  });
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
@@ -68,18 +58,15 @@ export function IntroScreen() {
   const cardIntroVariants: Variants = {
     hidden: {
       opacity: 0,
-      rotate: -4,
-      x: -420,
+      y: 10,
     },
     visible: (index: number) => ({
       opacity: 1,
-      rotate: [-4, 1.4, 0],
-      x: [-420, 28, 0],
+      y: 0,
       transition: {
-        delay: 0.14 + index * 0.16,
-        duration: 0.72,
+        delay: 0.08 + index * 0.08,
+        duration: 0.22,
         ease: "easeOut",
-        times: [0, 0.78, 1],
       },
     }),
   };
@@ -131,7 +118,7 @@ export function IntroScreen() {
                 role="button"
                 tabIndex={0}
                 custom={index}
-                initial={shouldPlayCardIntro ? "hidden" : false}
+                initial="hidden"
                 animate="visible"
                 variants={cardIntroVariants}
                 whileHover={{ y: -4 }}

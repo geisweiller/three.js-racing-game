@@ -3,6 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { getVehicleOption } from "../data/vehicleOptions";
+import { withAssetBase } from "../game/assetPath";
 import { useGameStore } from "../game/useGameStore";
 
 const SKID_AUDIO_PATH = "/starter-kit-racing/audio/skid.ogg";
@@ -109,7 +110,7 @@ export function VehicleAudio() {
     }
 
     const context = new AudioContextClass();
-    const skid = new Audio(SKID_AUDIO_PATH);
+    const skid = new Audio(withAssetBase(SKID_AUDIO_PATH));
 
     skid.loop = true;
     skid.volume = 0;
@@ -136,7 +137,7 @@ export function VehicleAudio() {
         return;
       }
 
-      await context.audioWorklet.addModule(ENGINE_WORKLET_PATH);
+      await context.audioWorklet.addModule(withAssetBase(ENGINE_WORKLET_PATH));
       const node = new AudioWorkletNode(context, "engine-sound", {
         numberOfInputs: 0,
         outputChannelCount: [1],

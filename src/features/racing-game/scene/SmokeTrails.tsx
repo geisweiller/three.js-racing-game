@@ -15,6 +15,7 @@ import {
   Vector3,
 } from "three";
 import { getVehicleOption } from "../data/vehicleOptions";
+import { withAssetBase } from "../game/assetPath";
 import { useGameStore } from "../game/useGameStore";
 
 const POOL_SIZE = 1280;
@@ -142,7 +143,10 @@ function emitAt(system: SmokeSystem, x: number, y: number, z: number) {
 }
 
 export function SmokeTrails() {
-  const smokeTexture = useLoader(TextureLoader, "/starter-kit-racing/sprites/smoke.png");
+  const smokeTexture = useLoader(
+    TextureLoader,
+    withAssetBase("/starter-kit-racing/sprites/smoke.png"),
+  );
   const system = useMemo(() => createSmokeSystem(smokeTexture), [smokeTexture]);
 
   useFrame((_, delta) => {
