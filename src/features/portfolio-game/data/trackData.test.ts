@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   constrainPointToTrack,
   isPointOnTrack,
+  trackDecorations,
   roadTiles,
   START_POSITION,
   trackProps,
@@ -25,11 +26,24 @@ describe("isPointOnTrack", () => {
 
   it("creates a closed circuit with straights and corners", () => {
     expect(roadTiles.some((tile) => tile.kind === "curve")).toBe(true);
-    expect(roadTiles.filter((tile) => tile.kind === "straight").length).toBeGreaterThan(20);
+    expect(roadTiles.some((tile) => tile.kind === "finish")).toBe(true);
+    expect(roadTiles.filter((tile) => tile.kind === "straight").length).toBeGreaterThan(8);
   });
 
-  it("adds visual props around the circuit", () => {
-    expect(trackProps.some((prop) => prop.kind === "cone")).toBe(true);
-    expect(trackProps.filter((prop) => prop.kind === "light").length).toBeGreaterThan(8);
+  it("keeps the racing circuit clear of visual props", () => {
+    expect(trackProps).toHaveLength(0);
+  });
+
+  it("fills the outside of the track with starter kit decorations", () => {
+    expect(trackDecorations.length).toBeGreaterThan(20);
+    expect(trackDecorations.some((decoration) => decoration.kind === "forest")).toBe(true);
+    expect(trackDecorations.some((decoration) => decoration.kind === "empty")).toBe(true);
+  });
+
+  it("places a single workshop structure close to the racing circuit", () => {
+    expect(
+      trackDecorations.filter((decoration) => decoration.id.startsWith("structure-building")),
+    ).toHaveLength(1);
+    expect(trackDecorations.some((decoration) => decoration.kind === "buildingD")).toBe(true);
   });
 });

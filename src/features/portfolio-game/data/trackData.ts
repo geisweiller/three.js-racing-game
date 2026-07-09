@@ -7,7 +7,15 @@ export type RoadSegment = {
 };
 
 export type RoadTileKind = "curve" | "finish" | "straight";
-export type TrackPropKind = "cone" | "light";
+export type TrackDecorationKind =
+  | "buildingA"
+  | "buildingD"
+  | "empty"
+  | "forest"
+  | "skyscraperA"
+  | "tents"
+  | "treeSmall";
+export type TrackPropKind = never;
 
 export type RoadTile = {
   id: string;
@@ -24,249 +32,203 @@ export type TrackProp = {
   scale?: number;
 };
 
-export const ROAD_TILE_SIZE = 2.85;
+export type TrackDecoration = {
+  id: string;
+  kind: TrackDecorationKind;
+  position: Vector3Tuple;
+  rotationY?: number;
+  scale?: number;
+};
+
+export const ROAD_TILE_SIZE = 4.45;
 // Tamanho visual de cada tile do Starter dentro da nossa cena. Ele fica igual
 // ao espacamento do grid para evitar sobreposicao entre retas e curvas.
 export const ROAD_VISUAL_SIZE = ROAD_TILE_SIZE;
 // Largura dirigivel da pista. E um pouco menor que ROAD_VISUAL_SIZE porque os
 // modelos do Starter Kit incluem guard-rails e bordas alem do asfalto.
-export const ROAD_WIDTH = 2.35;
-export const START_POSITION: Vector3Tuple = [0, 0, -ROAD_TILE_SIZE * 4];
-export const START_HEADING = Math.PI / 2;
-export const MAP_LIMIT = 24;
+export const ROAD_WIDTH = 3.72;
+export const START_POSITION: Vector3Tuple = [ROAD_TILE_SIZE * 1.5, 0, ROAD_TILE_SIZE * 0.5];
+export const START_HEADING = 0;
+export const MAP_LIMIT = 40;
 const TRACK_EDGE_EPSILON = 0.001;
 
-const left = -ROAD_TILE_SIZE * 4;
-const right = ROAD_TILE_SIZE * 4;
-const top = ROAD_TILE_SIZE * 4;
-const bottom = -ROAD_TILE_SIZE * 4;
-const straightIndexes = [-3, -2, -1, 0, 1, 2, 3];
-const cornerRadius = ROAD_TILE_SIZE;
+const gridOffsetX = 1.5;
+const gridOffsetZ = 0.5;
+const orientationByStarterCode = {
+  0: 0,
+  10: Math.PI,
+  16: Math.PI / 2,
+  22: (Math.PI * 3) / 2,
+} as const;
 
-type TrackCenterlinePart =
-  | {
-      kind: "arc";
-      center: Vector3Tuple;
-      endAngle: number;
-      radius: number;
-      startAngle: number;
+const trackCells = [
+  [-3, -3, "curve", 16],
+  [-2, -3, "straight", 22],
+  [-1, -3, "straight", 22],
+  [0, -3, "curve", 0],
+  [-3, -2, "straight", 0],
+  [0, -2, "straight", 0],
+  [-3, -1, "curve", 10],
+  [-2, -1, "curve", 0],
+  [0, -1, "straight", 0],
+  [-2, 0, "straight", 10],
+  [0, 0, "finish", 0],
+  [-2, 1, "straight", 10],
+  [0, 1, "straight", 0],
+  [-2, 2, "curve", 10],
+  [-1, 2, "straight", 16],
+  [0, 2, "curve", 22],
+] as const satisfies readonly (readonly [number, number, RoadTileKind, keyof typeof orientationByStarterCode])[];
+
+const trackCellSet = new Set(trackCells.map(([gx, gz]) => `${gx},${gz}`));
+
+const trackCellBounds = trackCells.reduce(
+  (bounds, [gx, gz]) => ({
+    maxX: Math.max(bounds.maxX, gx),
+    maxZ: Math.max(bounds.maxZ, gz),
+    minX: Math.min(bounds.minX, gx),
+    minZ: Math.min(bounds.minZ, gz),
+  }),
+  { maxX: -Infinity, maxZ: -Infinity, minX: Infinity, minZ: Infinity },
+);
+
+const centerlineCells = [
+  [-3, -3],
+  [-2, -3],
+  [-1, -3],
+  [0, -3],
+  [0, -2],
+  [0, -1],
+  [0, 0],
+  [0, 1],
+  [0, 2],
+  [-1, 2],
+  [-2, 2],
+  [-2, 1],
+  [-2, 0],
+  [-2, -1],
+  [-3, -1],
+  [-3, -2],
+] as const;
+
+const structureCells = [
+  [-4, -2, "buildingD", 1, 1.25],
+] as const satisfies readonly (readonly [
+  number,
+  number,
+  TrackDecorationKind,
+  number,
+  number,
+])[];
+
+const structureCellSet = new Set(structureCells.map(([gx, gz]) => `${gx},${gz}`));
+
+function gridToWorld(gx: number, gz: number): Vector3Tuple {
+  return [
+    (gx + gridOffsetX) * ROAD_TILE_SIZE,
+    0,
+    (gz + gridOffsetZ) * ROAD_TILE_SIZE,
+  ];
+}
+
+type TrackCenterlinePart = {
+  end: Vector3Tuple;
+  start: Vector3Tuple;
+};
+
+const centerlinePoints = centerlineCells.map(([gx, gz]) => gridToWorld(gx, gz));
+
+const trackCenterline: TrackCenterlinePart[] = centerlinePoints.map((point, index) => ({
+  start: point,
+  end: centerlinePoints[(index + 1) % centerlinePoints.length],
+}));
+
+export const roadTiles: RoadTile[] = trackCells.map(([gx, gz, kind, orientation]) => ({
+  id: `${kind}-${gx}-${gz}`,
+  kind,
+  position: gridToWorld(gx, gz),
+  rotationY: orientationByStarterCode[orientation],
+}));
+
+export const trackProps: TrackProp[] = [];
+
+function hashGridCell(gx: number, gz: number) {
+  let hash = gx * 374761393 + gz * 668265263;
+  hash = (hash ^ (hash >> 13)) * 1274126177;
+
+  return (hash ^ (hash >> 16)) >>> 0;
+}
+
+function createTrackDecorations() {
+  const decorations: TrackDecoration[] = [];
+  const padding = 3;
+
+  for (let gz = trackCellBounds.minZ - padding; gz <= trackCellBounds.maxZ + padding; gz += 1) {
+    for (let gx = trackCellBounds.minX - padding; gx <= trackCellBounds.maxX + padding; gx += 1) {
+      if (trackCellSet.has(`${gx},${gz}`)) {
+        continue;
+      }
+      if (structureCellSet.has(`${gx},${gz}`)) {
+        continue;
+      }
+
+      const distanceX =
+        gx < trackCellBounds.minX
+          ? trackCellBounds.minX - gx
+          : gx > trackCellBounds.maxX
+            ? gx - trackCellBounds.maxX
+            : 0;
+      const distanceZ =
+        gz < trackCellBounds.minZ
+          ? trackCellBounds.minZ - gz
+          : gz > trackCellBounds.maxZ
+            ? gz - trackCellBounds.maxZ
+            : 0;
+      const distanceFromTrackBox = Math.max(distanceX, distanceZ);
+      const hash = hashGridCell(gx, gz);
+      const kind: TrackDecorationKind =
+        distanceFromTrackBox <= 1
+          ? hash % 7 === 0
+            ? "tents"
+            : "empty"
+          : "forest";
+
+      decorations.push({
+        id: `decoration-${kind}-${gx}-${gz}`,
+        kind,
+        position: gridToWorld(gx, gz),
+        rotationY: (hash % 4) * (Math.PI / 2),
+      });
     }
-  | {
-      kind: "line";
-      end: Vector3Tuple;
-      start: Vector3Tuple;
-    };
+  }
 
-const trackCenterline: TrackCenterlinePart[] = [
-  {
-    kind: "line",
-    start: [left + cornerRadius, 0, bottom],
-    end: [right - cornerRadius, 0, bottom],
-  },
-  {
-    kind: "arc",
-    center: [right - cornerRadius, 0, bottom + cornerRadius],
-    radius: cornerRadius,
-    startAngle: (Math.PI * 3) / 2,
-    endAngle: Math.PI * 2,
-  },
-  {
-    kind: "line",
-    start: [right, 0, bottom + cornerRadius],
-    end: [right, 0, top - cornerRadius],
-  },
-  {
-    kind: "arc",
-    center: [right - cornerRadius, 0, top - cornerRadius],
-    radius: cornerRadius,
-    startAngle: 0,
-    endAngle: Math.PI / 2,
-  },
-  {
-    kind: "line",
-    start: [right - cornerRadius, 0, top],
-    end: [left + cornerRadius, 0, top],
-  },
-  {
-    kind: "arc",
-    center: [left + cornerRadius, 0, top - cornerRadius],
-    radius: cornerRadius,
-    startAngle: Math.PI / 2,
-    endAngle: Math.PI,
-  },
-  {
-    kind: "line",
-    start: [left, 0, top - cornerRadius],
-    end: [left, 0, bottom + cornerRadius],
-  },
-  {
-    kind: "arc",
-    center: [left + cornerRadius, 0, bottom + cornerRadius],
-    radius: cornerRadius,
-    startAngle: Math.PI,
-    endAngle: (Math.PI * 3) / 2,
-  },
-];
-
-const horizontalStraightTiles = [top, bottom].flatMap((z) =>
-  straightIndexes.map((index) => ({
-    id: `straight-x-${index}-${z}`,
-    kind: z === bottom && index === 0 ? ("finish" as const) : ("straight" as const),
-    position: [index * ROAD_TILE_SIZE, 0, z] as Vector3Tuple,
-    rotationY: -Math.PI / 2,
-  })),
-);
-
-const verticalStraightTiles = [left, right].flatMap((x) =>
-  straightIndexes.map((index) => ({
-    id: `straight-z-${x}-${index}`,
-    kind: "straight" as const,
-    position: [x, 0, index * ROAD_TILE_SIZE] as Vector3Tuple,
-  })),
-);
-
-export const roadTiles: RoadTile[] = [
-  ...horizontalStraightTiles,
-  ...verticalStraightTiles,
-  {
-    id: "curve-bottom-left",
-    kind: "curve",
-    position: [left, 0, bottom],
-    rotationY: Math.PI / 2,
-  },
-  {
-    id: "curve-bottom-right",
-    kind: "curve",
-    position: [right, 0, bottom],
+  const structureBases = structureCells.map(([gx, gz]) => ({
+    id: `structure-base-empty-${gx}-${gz}`,
+    kind: "empty" as const,
+    position: gridToWorld(gx, gz),
     rotationY: 0,
-  },
-  {
-    id: "curve-top-right",
-    kind: "curve",
-    position: [right, 0, top],
-    rotationY: (Math.PI * 3) / 2,
-  },
-  {
-    id: "curve-top-left",
-    kind: "curve",
-    position: [left, 0, top],
-    rotationY: Math.PI,
-  },
-];
+  }));
+  const structures = structureCells.map(([gx, gz, kind, quarterTurns, scale]) => ({
+    id: `structure-${kind}-${gx}-${gz}`,
+    kind,
+    position: gridToWorld(gx, gz),
+    rotationY: quarterTurns * (Math.PI / 2),
+    scale,
+  }));
 
-export const trackProps: TrackProp[] = [
-  ...[
-    [left + 1.25, bottom + 1.25],
-    [right - 1.25, bottom + 1.25],
-    [right - 1.25, top - 1.25],
-    [left + 1.25, top - 1.25],
-  ].map(([x, z], index) => ({
-    id: `corner-cone-${index}`,
-    kind: "cone" as const,
-    position: [x, 0.02, z] as Vector3Tuple,
-    scale: 0.8,
-  })),
-  {
-    id: "light-bottom-left",
-    kind: "light",
-    position: [left + 1.4, 0.02, bottom - 1.1],
-    rotationY: Math.PI,
-  },
-  {
-    id: "light-bottom-right",
-    kind: "light",
-    position: [right - 1.4, 0.02, bottom - 1.1],
-    rotationY: Math.PI,
-  },
-  {
-    id: "light-bottom-mid",
-    kind: "light",
-    position: [0, 0.02, bottom - 1.1],
-    rotationY: Math.PI,
-  },
-  {
-    id: "light-top-left",
-    kind: "light",
-    position: [left + 1.4, 0.02, top + 1.1],
-  },
-  {
-    id: "light-top-right",
-    kind: "light",
-    position: [right - 1.4, 0.02, top + 1.1],
-  },
-  {
-    id: "light-top-mid",
-    kind: "light",
-    position: [0, 0.02, top + 1.1],
-  },
-  {
-    id: "light-left-mid",
-    kind: "light",
-    position: [left - 1.1, 0.02, 0],
-    rotationY: -Math.PI / 2,
-  },
-  {
-    id: "light-left-upper",
-    kind: "light",
-    position: [left - 1.1, 0.02, top - 2.8],
-    rotationY: -Math.PI / 2,
-  },
-  {
-    id: "light-left-lower",
-    kind: "light",
-    position: [left - 1.1, 0.02, bottom + 2.8],
-    rotationY: -Math.PI / 2,
-  },
-  {
-    id: "light-right-mid",
-    kind: "light",
-    position: [right + 1.1, 0.02, 0],
-    rotationY: Math.PI / 2,
-  },
-  {
-    id: "light-right-upper",
-    kind: "light",
-    position: [right + 1.1, 0.02, top - 2.8],
-    rotationY: Math.PI / 2,
-  },
-  {
-    id: "light-right-lower",
-    kind: "light",
-    position: [right + 1.1, 0.02, bottom + 2.8],
-    rotationY: Math.PI / 2,
-  },
-];
+  return [...decorations, ...structureBases, ...structures];
+}
 
-export const roadSegments: RoadSegment[] = [
-  {
-    id: "bottom-straight",
-    center: [0, 0, bottom],
-    size: [right - left + ROAD_WIDTH, ROAD_WIDTH],
-  },
-  {
-    id: "top-straight",
-    center: [0, 0, top],
-    size: [right - left + ROAD_WIDTH, ROAD_WIDTH],
-  },
-  {
-    id: "left-straight",
-    center: [left, 0, 0],
-    size: [ROAD_WIDTH, top - bottom + ROAD_WIDTH],
-  },
-  {
-    id: "right-straight",
-    center: [right, 0, 0],
-    size: [ROAD_WIDTH, top - bottom + ROAD_WIDTH],
-  },
-];
+export const trackDecorations: TrackDecoration[] = createTrackDecorations();
+
+export const roadSegments: RoadSegment[] = roadTiles.map((tile) => ({
+  id: tile.id,
+  center: tile.position,
+  size: [ROAD_WIDTH, ROAD_WIDTH],
+}));
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
-}
-
-function normalizeAngle(angle: number) {
-  const fullTurn = Math.PI * 2;
-  return ((angle % fullTurn) + fullTurn) % fullTurn;
 }
 
 function getClosestLinePoint(position: Vector3Tuple, start: Vector3Tuple, end: Vector3Tuple) {
@@ -286,35 +248,12 @@ function getClosestLinePoint(position: Vector3Tuple, start: Vector3Tuple, end: V
   return [start[0] + segmentX * progress, position[1], start[2] + segmentZ * progress] as Vector3Tuple;
 }
 
-function getClosestArcPoint(
-  position: Vector3Tuple,
-  center: Vector3Tuple,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-) {
-  const rawAngle = normalizeAngle(Math.atan2(position[2] - center[2], position[0] - center[0]));
-  const angle =
-    startAngle <= endAngle
-      ? clamp(rawAngle, startAngle, endAngle)
-      : normalizeAngle(clamp(rawAngle < startAngle ? rawAngle + Math.PI * 2 : rawAngle, startAngle, endAngle));
-
-  return [
-    center[0] + Math.cos(angle) * radius,
-    position[1],
-    center[2] + Math.sin(angle) * radius,
-  ] as Vector3Tuple;
-}
-
 function getClosestTrackPoint(position: Vector3Tuple) {
   let closestPosition: Vector3Tuple = position;
   let closestDistanceSq = Number.POSITIVE_INFINITY;
 
   for (const part of trackCenterline) {
-    const candidate =
-      part.kind === "line"
-        ? getClosestLinePoint(position, part.start, part.end)
-        : getClosestArcPoint(position, part.center, part.radius, part.startAngle, part.endAngle);
+    const candidate = getClosestLinePoint(position, part.start, part.end);
     const distanceSq = (position[0] - candidate[0]) ** 2 + (position[2] - candidate[2]) ** 2;
 
     if (distanceSq < closestDistanceSq) {
