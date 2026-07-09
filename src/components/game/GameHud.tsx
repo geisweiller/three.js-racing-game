@@ -63,7 +63,7 @@ export function GameHud() {
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-[#66cfb2] transition-[width] duration-300"
+                className="h-full rounded-full bg-[#66cfb2]"
                 style={{ width: `${nitroCharge}%` }}
               />
             </div>
@@ -83,7 +83,7 @@ export function GameHud() {
             R - Respawn
           </button>
           <div className="rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur">
-            W/S - Acelera/Freia · A/D - Vira
+            W/S - Acelera/Freia · A/D - Vira · Espaço - Nitro
           </div>
         </div>
       </div>

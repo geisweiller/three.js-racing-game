@@ -16,6 +16,7 @@ type GameState = {
   lapCount: number;
   lastLapTime: number | null;
   nitroCharge: number;
+  nitroActive: boolean;
   nitroPickupVersion: number;
   openedSectionId: PortfolioSectionId | null;
   playerHeading: number;
@@ -31,6 +32,7 @@ type GameState = {
   selectedVehicleVariantId: VehicleVariantId;
   addNitroCharge: (amount: number) => void;
   completeLap: (lapTime: number) => void;
+  consumeNitroCharge: (amount: number) => void;
   requestRespawn: () => void;
   resetLapTimer: () => void;
   setActivePointId: (id: PortfolioSectionId | null) => void;
@@ -58,6 +60,7 @@ export const useGameStore = create<GameState>((set) => ({
   lapCount: 0,
   lastLapTime: null,
   nitroCharge: 0,
+  nitroActive: false,
   nitroPickupVersion: 0,
   openedSectionId: null,
   playerHeading: START_HEADING,
@@ -83,10 +86,16 @@ export const useGameStore = create<GameState>((set) => ({
       lapCount: state.lapCount + 1,
       lastLapTime: lapTime,
     })),
+  consumeNitroCharge: (amount) =>
+    set((state) => ({
+      nitroActive: state.nitroCharge > 0 && amount > 0,
+      nitroCharge: Math.max(0, state.nitroCharge - amount),
+    })),
   requestRespawn: () =>
     set((state) => ({
       activePointId: null,
       currentLapTime: 0,
+      nitroActive: false,
       nitroCharge: 0,
       playerAngularSpeed: 0,
       playerDriftIntensity: 0,

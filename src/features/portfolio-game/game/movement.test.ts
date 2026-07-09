@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampToMap, getMovementVector, updateVehicle } from "./movement";
+import { clampToMap, getMovementVector, updateVehicle, type MovementInput } from "./movement";
 import { MAP_LIMIT } from "../data/trackData";
 import { getVehicleOption } from "../data/vehicleOptions";
 
@@ -8,15 +8,21 @@ const baseState = {
   angularSpeed: 0,
   driftIntensity: 0,
 };
+const idleInput: MovementInput = {
+  backward: false,
+  forward: false,
+  left: false,
+  nitro: false,
+  right: false,
+};
+
+function input(overrides: Partial<MovementInput>): MovementInput {
+  return { ...idleInput, ...overrides };
+}
 
 describe("getMovementVector", () => {
   it("normalizes diagonal movement", () => {
-    const vector = getMovementVector({
-      forward: true,
-      backward: false,
-      left: false,
-      right: true,
-    });
+    const vector = getMovementVector(input({ forward: true, right: true }));
 
     expect(vector[0]).toBeCloseTo(0.707);
     expect(vector[2]).toBeCloseTo(0.707);
@@ -24,7 +30,7 @@ describe("getMovementVector", () => {
 
   it("returns a zero vector when there is no input", () => {
     expect(
-      getMovementVector({ forward: false, backward: false, left: false, right: false }),
+      getMovementVector(idleInput),
     ).toEqual([0, 0, 0]);
   });
 });
@@ -43,7 +49,7 @@ describe("updateVehicle", () => {
   it("accelerates the vehicle forward", () => {
     const nextState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
-      { forward: true, backward: false, left: false, right: false },
+      input({ forward: true }),
       0.5,
     );
 
@@ -54,13 +60,13 @@ describe("updateVehicle", () => {
   it("allows low-speed steering like the Starter Kit vehicle model", () => {
     const idleState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
-      { forward: false, backward: false, left: false, right: true },
+      input({ right: true }),
       0.5,
     );
 
     const movingState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 4 },
-      { forward: false, backward: false, left: true, right: false },
+      input({ left: true }),
       0.5,
     );
 
@@ -71,7 +77,7 @@ describe("updateVehicle", () => {
   it("limits top speed while driving off road", () => {
     const nextState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 6 },
-      { forward: true, backward: false, left: false, right: false },
+      input({ forward: true }),
       1,
       "offroad",
     );
@@ -82,18 +88,18 @@ describe("updateVehicle", () => {
   it("uses vehicle handling to make the formula 1 faster than the race car", () => {
     const formula = getVehicleOption("formula-1");
     const raceCar = getVehicleOption("race-car");
-    const input = { forward: true, backward: false, left: false, right: false };
+    const forwardInput = input({ forward: true });
 
     const formulaState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
-      input,
+      forwardInput,
       1,
       "track",
       formula.handling,
     );
     const raceCarState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
-      input,
+      forwardInput,
       1,
       "track",
       raceCar.handling,
@@ -105,18 +111,18 @@ describe("updateVehicle", () => {
   it("uses vehicle handling to make the kart turn easier than the race car", () => {
     const kart = getVehicleOption("kart");
     const raceCar = getVehicleOption("race-car");
-    const input = { forward: true, backward: false, left: true, right: false };
+    const turningInput = input({ forward: true, left: true });
 
     const kartState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
-      input,
+      turningInput,
       0.25,
       "track",
       kart.handling,
     );
     const raceCarState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
-      input,
+      turningInput,
       0.25,
       "track",
       raceCar.handling,
@@ -128,7 +134,7 @@ describe("updateVehicle", () => {
   it("reports drift intensity while steering at speed", () => {
     const nextState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
-      { forward: true, backward: false, left: true, right: false },
+      input({ forward: true, left: true }),
       0.5,
     );
 
@@ -138,16 +144,32 @@ describe("updateVehicle", () => {
   it("reports less slip while driving straight than while steering", () => {
     const straightState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
-      { forward: true, backward: false, left: false, right: false },
+      input({ forward: true }),
       0.5,
     );
     const turningState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
-      { forward: true, backward: false, left: true, right: false },
+      input({ forward: true, left: true }),
       0.5,
     );
 
     expect(straightState.driftIntensity).toBeGreaterThan(0);
     expect(turningState.driftIntensity).toBeGreaterThan(straightState.driftIntensity);
+  });
+
+  it("uses nitro boost to raise acceleration and top speed while active", () => {
+    const vehicle = getVehicleOption("race-car");
+    const base = { ...baseState, position: [0, 0, 2] as const, heading: 0, speed: 5 };
+    const normalState = updateVehicle(base, input({ forward: true }), 0.5, "track", vehicle.handling);
+    const boostedState = updateVehicle(
+      base,
+      input({ forward: true, nitro: true }),
+      0.5,
+      "track",
+      vehicle.handling,
+      1.42,
+    );
+
+    expect(boostedState.speed).toBeGreaterThan(normalState.speed);
   });
 });

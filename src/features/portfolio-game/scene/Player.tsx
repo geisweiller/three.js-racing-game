@@ -27,6 +27,8 @@ const RESPAWN_BLINK_INTERVAL = 0.16;
 const NITRO_FLASH_DURATION = 0.28;
 const FINISH_TRIGGER_RADIUS = 1.3;
 const LAP_ARM_DISTANCE = 7;
+const NITRO_BOOST_MULTIPLIER = 1.42;
+const NITRO_CONSUME_PER_SECOND = 25;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -122,6 +124,7 @@ export function Player({ input }: PlayerProps) {
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
   const completeLap = useGameStore((state) => state.completeLap);
+  const consumeNitroCharge = useGameStore((state) => state.consumeNitroCharge);
   const setPlayerHeading = useGameStore((state) => state.setPlayerHeading);
   const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
   const setCurrentLapTime = useGameStore((state) => state.setCurrentLapTime);
@@ -201,6 +204,16 @@ export function Player({ input }: PlayerProps) {
       lapStartTime.current = state.clock.elapsedTime;
     }
 
+    const nitroCharge = useGameStore.getState().nitroCharge;
+    const nitroActive = input.nitro && nitroCharge > 0;
+    const nitroBoost = nitroActive ? NITRO_BOOST_MULTIPLIER : 1;
+
+    if (input.nitro) {
+      consumeNitroCharge(nitroActive ? NITRO_CONSUME_PER_SECOND * delta : 0);
+    } else if (useGameStore.getState().nitroActive) {
+      consumeNitroCharge(0);
+    }
+
     const surface = isPointOnTrack(vehicleState.current.position, 0.35) ? "track" : "offroad";
     let nextState = updateVehicle(
       vehicleState.current,
@@ -208,6 +221,7 @@ export function Player({ input }: PlayerProps) {
       delta,
       surface,
       selectedVehicle.handling,
+      nitroBoost,
     );
     const trackConstraint = constrainPointToTrack(
       nextState.position,

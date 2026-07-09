@@ -7,6 +7,7 @@ const initialInput: MovementInput = {
   forward: false,
   backward: false,
   left: false,
+  nitro: false,
   right: false,
 };
 
@@ -24,6 +25,8 @@ function mapKeyToDirection(key: string): keyof MovementInput | null {
     case "d":
     case "arrowright":
       return "right";
+    case " ":
+      return "nitro";
     default:
       return null;
   }
