@@ -1,6 +1,6 @@
-# Fundacao do portfolio Three.js
+# Fundacao do jogo de corrida Three.js
 
-Esta etapa cria o primeiro MVP tecnico do portfolio 3D. A meta nao e ter o visual final, mas montar uma base jogavel e facil de estudar.
+Esta etapa cria o primeiro MVP tecnico do jogo de corrida 3D. A meta nao e ter o visual final, mas montar uma base jogavel e facil de estudar.
 
 ## O que foi criado
 
@@ -8,29 +8,29 @@ Esta etapa cria o primeiro MVP tecnico do portfolio 3D. A meta nao e ter o visua
 - `@react-three/fiber` para usar Three.js dentro de componentes React.
 - `@react-three/drei` esta instalado para helpers futuros de cena, camera, modelos e textos.
 - Zustand para guardar estado pequeno do jogo.
-- Framer Motion para animar o painel React.
-- Vitest para testar regras puras de movimento e proximidade.
+- Framer Motion para animacoes de interface.
+- Vitest para testar regras puras de movimento e pista.
 
 ## Como as camadas se dividem
 
 Three.js cuida do mundo 3D:
 
 - `src/components/game/GameCanvas.tsx` cria o `<Canvas>`, que e o ponto de entrada da cena 3D.
-- `src/features/portfolio-game/scene/ExperienceScene.tsx` compoe luzes, chao, objetos, personagem, camera e marcadores.
-- `src/features/portfolio-game/scene/Player.tsx` atualiza a posicao do veiculo a cada frame.
-- `src/features/portfolio-game/scene/FollowCamera.tsx` faz a camera seguir o jogador com interpolacao.
+- `src/features/racing-game/scene/ExperienceScene.tsx` compoe luzes, pista, cenario, veiculo, camera, efeitos e audio.
+- `src/features/racing-game/scene/Player.tsx` atualiza a posicao do veiculo a cada frame.
+- `src/features/racing-game/scene/FollowCamera.tsx` faz a camera acompanhar o jogador com angulo fixo.
 
 React cuida da interface textual:
 
-- `src/components/game/GameHud.tsx` mostra instrucoes e a dica de interacao.
-- `src/components/game/InteractionPanel.tsx` abre conteudo profissional fora do canvas.
+- `src/components/game/GameHud.tsx` mostra tempo, voltas, nitro e comandos.
+- `src/components/game/IntroScreen.tsx` permite escolher o veiculo e a variante antes de jogar.
 
 Dados e regras ficam separados:
 
-- `src/features/portfolio-game/data/portfolioData.ts` guarda textos do portfolio.
-- `src/features/portfolio-game/data/pointsOfInterest.ts` define os pontos interativos do mapa.
-- `src/features/portfolio-game/game/movement.ts` calcula aceleracao, freio, direcao, atrito e limites do mapa.
-- `src/features/portfolio-game/game/proximity.ts` descobre se o jogador esta perto de algum ponto.
+- `src/features/racing-game/data/trackData.ts` guarda o desenho da pista, decoracoes e segmentos dirigiveis.
+- `src/features/racing-game/data/vehicleOptions.ts` define veiculos, variantes e handling.
+- `src/features/racing-game/game/movement.ts` calcula aceleracao, freio, direcao, atrito, drift e nitro.
+- `src/features/racing-game/game/useGameStore.ts` centraliza estado de partida, HUD, respawn, voltas e nitro.
 
 ## Conceitos de Three.js usados aqui
 
@@ -44,7 +44,7 @@ Dados e regras ficam separados:
 
 `ambientLight` ilumina tudo de forma suave. `directionalLight` simula uma luz distante, parecida com sol, e permite sombras.
 
-`useFrame` roda em todo frame renderizado. Aqui ele move o veiculo e suaviza a camera.
+`useFrame` roda em todo frame renderizado. Aqui ele move o veiculo, atualiza a camera, detecta colisao com a pista e cria efeitos.
 
 ## Como rodar
 
@@ -64,8 +64,8 @@ Os primeiros testes cobrem regras puras porque elas sao mais estaveis e mais fac
 
 ## Proximas etapas sugeridas
 
-1. Pausar movimento quando o painel estiver aberto.
-2. Melhorar o mapa com pistas, rampas e objetos low-poly.
-3. Separar cada area da cidade em componentes proprios.
-4. Adicionar PT/EN com `react-intl`.
-5. Trazer a timeline real do CV e conteudo detalhado dos projetos.
+1. Melhorar o layout do circuito e pontos de ultrapassagem.
+2. Adicionar checkpoints intermediarios para validar voltas com mais precisao.
+3. Criar IA simples para adversarios.
+4. Adicionar tela de resultados e ranking local.
+5. Refinar audio, particulas e feedback de nitro.

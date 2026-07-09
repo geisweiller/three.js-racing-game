@@ -1,6 +1,6 @@
 # Replicando a base do Starter Kit Racing
 
-O objetivo aqui e replicar a experiencia base do Starter Kit Racing dentro do portfolio, nao copiar o jogo inteiro.
+O objetivo aqui e replicar a experiencia base do Starter Kit Racing dentro do jogo, nao copiar o projeto inteiro.
 
 O Starter Kit Racing separa responsabilidades em modulos como `Vehicle`, `Camera`, `Controls`, `Track`, `Physics`, `LapTimer`, particulas e audio. No nosso projeto, a primeira replica fica menor:
 
@@ -79,7 +79,7 @@ Quando entrarmos em colisao real, rampas, objetos empurraveis ou capotagem, faz 
 
 1. Checkpoints na pista.
 2. Contador de volta/tempo.
-3. Placas de portfolio como gates.
+3. Sinalizacao de curva, boxes e checkpoints.
 4. Boost curto.
 5. Particulas simples de poeira quando sair da pista.
 6. Modelos `.glb` low-poly para carro e cenario.

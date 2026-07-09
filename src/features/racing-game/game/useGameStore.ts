@@ -2,14 +2,12 @@
 
 import { create } from "zustand";
 import { START_HEADING, START_POSITION } from "../data/trackData";
-import type { PortfolioSectionId } from "../data/portfolioData";
 import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/vehicleOptions";
-import type { Vector3Tuple } from "./proximity";
+import type { Vector3Tuple } from "./vector";
 
 type GamePhase = "intro" | "playing";
 
 type GameState = {
-  activePointId: PortfolioSectionId | null;
   gamePhase: GamePhase;
   currentLapTime: number;
   bestLapTime: number | null;
@@ -18,7 +16,6 @@ type GameState = {
   nitroCharge: number;
   nitroActive: boolean;
   nitroPickupVersion: number;
-  openedSectionId: PortfolioSectionId | null;
   playerHeading: number;
   playerPosition: Vector3Tuple;
   playerAngularSpeed: number;
@@ -35,13 +32,11 @@ type GameState = {
   consumeNitroCharge: (amount: number) => void;
   requestRespawn: () => void;
   resetLapTimer: () => void;
-  setActivePointId: (id: PortfolioSectionId | null) => void;
   setCurrentLapTime: (time: number) => void;
   setGamePhase: (phase: GamePhase) => void;
   setPlayerHeading: (heading: number) => void;
   setSelectedVehicleId: (id: VehicleId) => void;
   setSelectedVehicleVariantId: (id: VehicleVariantId) => void;
-  setOpenedSectionId: (id: PortfolioSectionId | null) => void;
   setPlayerPosition: (position: Vector3Tuple) => void;
   setVehicleTelemetry: (telemetry: {
     angularSpeed: number;
@@ -53,7 +48,6 @@ type GameState = {
 };
 
 export const useGameStore = create<GameState>((set) => ({
-  activePointId: null,
   bestLapTime: null,
   currentLapTime: 0,
   gamePhase: "intro",
@@ -62,7 +56,6 @@ export const useGameStore = create<GameState>((set) => ({
   nitroCharge: 0,
   nitroActive: false,
   nitroPickupVersion: 0,
-  openedSectionId: null,
   playerHeading: START_HEADING,
   playerPosition: START_POSITION,
   playerAngularSpeed: 0,
@@ -93,7 +86,6 @@ export const useGameStore = create<GameState>((set) => ({
     })),
   requestRespawn: () =>
     set((state) => ({
-      activePointId: null,
       currentLapTime: 0,
       nitroActive: false,
       nitroCharge: 0,
@@ -113,13 +105,11 @@ export const useGameStore = create<GameState>((set) => ({
       lapCount: 0,
       lastLapTime: null,
     }),
-  setActivePointId: (id) => set({ activePointId: id }),
   setCurrentLapTime: (time) => set({ currentLapTime: time }),
   setGamePhase: (phase) => set({ gamePhase: phase }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
   setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
   setSelectedVehicleVariantId: (id) => set({ selectedVehicleVariantId: id }),
-  setOpenedSectionId: (id) => set({ openedSectionId: id }),
   setPlayerPosition: (position) => set({ playerPosition: position }),
   setVehicleTelemetry: (telemetry) =>
     set((state) => ({

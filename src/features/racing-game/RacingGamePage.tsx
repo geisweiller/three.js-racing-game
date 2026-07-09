@@ -12,17 +12,16 @@ const GameCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid h-full place-items-center bg-[#111418] text-[#f8f3e8]">
-        Carregando cidade 3D...
+        Carregando circuito 3D...
       </div>
     ),
   },
 );
 
-export function PortfolioGamePage() {
+export function RacingGamePage() {
   const gamePhase = useGameStore((state) => state.gamePhase);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
   const setGamePhase = useGameStore((state) => state.setGamePhase);
-  const setOpenedSectionId = useGameStore((state) => state.setOpenedSectionId);
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -31,7 +30,6 @@ export function PortfolioGamePage() {
       }
 
       event.preventDefault();
-      setOpenedSectionId(null);
       requestRespawn();
       setGamePhase("intro");
     }
@@ -41,7 +39,7 @@ export function PortfolioGamePage() {
     return () => {
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [gamePhase, requestRespawn, setGamePhase, setOpenedSectionId]);
+  }, [gamePhase, requestRespawn, setGamePhase]);
 
   if (gamePhase === "intro") {
     return <IntroScreen />;

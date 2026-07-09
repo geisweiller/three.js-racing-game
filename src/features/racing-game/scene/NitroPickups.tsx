@@ -5,12 +5,12 @@ import { Suspense, useRef, useState } from "react";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { roadTiles } from "../data/trackData";
-import type { Vector3Tuple } from "../game/proximity";
+import type { Vector3Tuple } from "../game/vector";
 import { useGameStore } from "../game/useGameStore";
 import { GlbModel } from "./GlbModel";
 
 const BOX_MODEL_PATH = "/game-assets/cars/box.glb";
-const MAX_PICKUPS = 4;
+const MAX_PICKUPS = 10;
 const SPAWN_INTERVAL = 5;
 const PICKUP_RADIUS = 0.85;
 const MIN_SPAWN_DISTANCE_FROM_PLAYER = 5;

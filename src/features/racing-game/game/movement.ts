@@ -1,4 +1,4 @@
-import type { Vector3Tuple } from "./proximity";
+import type { Vector3Tuple } from "./vector";
 import { MAP_LIMIT } from "../data/trackData";
 import { defaultVehicle, type VehicleHandling } from "../data/vehicleOptions";
 

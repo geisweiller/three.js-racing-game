@@ -118,7 +118,6 @@ export function Player({ input }: PlayerProps) {
     heading: START_HEADING,
     speed: 0,
   });
-  const openedSectionId = useGameStore((state) => state.openedSectionId);
   const nitroPickupVersion = useGameStore((state) => state.nitroPickupVersion);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
@@ -193,11 +192,6 @@ export function Player({ input }: PlayerProps) {
         0,
         1,
       ) * 3.5;
-    }
-
-    if (openedSectionId) {
-      lapStartTime.current += delta;
-      return;
     }
 
     if (lapStartTime.current === 0) {

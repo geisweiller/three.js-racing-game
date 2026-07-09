@@ -29,9 +29,9 @@ describe("isPointOnTrack", () => {
     const vehicleHalfWidth = 0.26;
     const edgeTolerance = vehicleHalfWidth / 2;
     const pointNearVisualEdge = [
-      START_POSITION[0] + ROAD_WIDTH / 2 - vehicleHalfWidth + edgeTolerance / 2,
+      START_POSITION[0],
       START_POSITION[1],
-      START_POSITION[2],
+      START_POSITION[2] + ROAD_WIDTH / 2 - vehicleHalfWidth + edgeTolerance / 2,
     ] as const;
 
     expect(constrainPointToTrack(pointNearVisualEdge, vehicleHalfWidth).collided).toBe(true);
@@ -43,6 +43,7 @@ describe("isPointOnTrack", () => {
   it("creates a closed circuit with straights and corners", () => {
     expect(roadTiles.some((tile) => tile.kind === "curve")).toBe(true);
     expect(roadTiles.some((tile) => tile.kind === "finish")).toBe(true);
+    expect(roadTiles.filter((tile) => tile.kind === "curve").length).toBeGreaterThanOrEqual(10);
     expect(roadTiles.filter((tile) => tile.kind === "straight").length).toBeGreaterThan(8);
   });
 
@@ -63,11 +64,11 @@ describe("isPointOnTrack", () => {
     expect(trackDecorations.filter((decoration) => decoration.id.includes("tents"))).toHaveLength(
       0,
     );
-    expect(trackDecorations.some((decoration) => decoration.id === "structure-workshop-1--3")).toBe(
+    expect(trackDecorations.some((decoration) => decoration.id === "structure-workshop-5-1")).toBe(
       true,
     );
     expect(
-      trackDecorations.some((decoration) => decoration.id === "structure-base-empty-1--3"),
+      trackDecorations.some((decoration) => decoration.id === "structure-base-empty-5-1"),
     ).toBe(false);
     expect(trackDecorations.some((decoration) => decoration.kind === "buildingA")).toBe(true);
     expect(trackDecorations.some((decoration) => decoration.kind === "buildingD")).toBe(true);

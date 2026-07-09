@@ -1,5 +1,5 @@
-import { PortfolioGamePage } from "@/features/portfolio-game/PortfolioGamePage";
+import { RacingGamePage } from "@/features/racing-game/RacingGamePage";
 
 export default function Home() {
-  return <PortfolioGamePage />;
+  return <RacingGamePage />;
 }

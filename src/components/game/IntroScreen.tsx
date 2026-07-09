@@ -3,21 +3,28 @@
 import { Button, Card, Chip } from "@heroui/react";
 import { Html } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { Suspense, useState } from "react";
 import {
   getVehicleVariant,
   vehicleOptions,
   type VehicleOption,
   type VehicleVariantOption,
-} from "@/features/portfolio-game/data/vehicleOptions";
-import { useGameStore } from "@/features/portfolio-game/game/useGameStore";
-import { GlbModel } from "@/features/portfolio-game/scene/GlbModel";
+} from "@/features/racing-game/data/vehicleOptions";
+import { useGameStore } from "@/features/racing-game/game/useGameStore";
+import { GlbModel } from "@/features/racing-game/scene/GlbModel";
+
+let vehicleCardIntroHasPlayed = false;
 
 function ModelLoading() {
   return (
     <Html center>
-      <div className="rounded-full bg-[#111418]/85 px-3 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur">
-        Carregando modelo
+      <div
+        aria-label="Carregando modelo"
+        className="grid h-10 w-10 place-items-center rounded-full bg-[#111418]/85 shadow-lg backdrop-blur"
+        role="status"
+      >
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#f8f3e8]/25 border-t-[#f6d365]" />
       </div>
     </Html>
   );
@@ -42,6 +49,14 @@ function VehiclePreview({ variant, vehicle }: { variant: VehicleVariantOption; v
 }
 
 export function IntroScreen() {
+  const [shouldPlayCardIntro] = useState(() => {
+    if (vehicleCardIntroHasPlayed) {
+      return false;
+    }
+
+    vehicleCardIntroHasPlayed = true;
+    return true;
+  });
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
@@ -50,6 +65,24 @@ export function IntroScreen() {
   const setSelectedVehicleId = useGameStore((state) => state.setSelectedVehicleId);
   const setSelectedVehicleVariantId = useGameStore((state) => state.setSelectedVehicleVariantId);
   const selectedVehicle = vehicleOptions.find((vehicle) => vehicle.id === selectedVehicleId);
+  const cardIntroVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      rotate: -4,
+      x: -420,
+    },
+    visible: (index: number) => ({
+      opacity: 1,
+      rotate: [-4, 1.4, 0],
+      x: [-420, 28, 0],
+      transition: {
+        delay: 0.14 + index * 0.16,
+        duration: 0.72,
+        ease: "easeOut",
+        times: [0, 0.78, 1],
+      },
+    }),
+  };
 
   function startGame() {
     resetLapTimer();
@@ -62,22 +95,21 @@ export function IntroScreen() {
       <section className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col justify-center gap-6">
         <div className="max-w-2xl">
           <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#f6d365]">
-            Racing portfolio prototype
+            Racing game prototype
           </p>
           <h1 className="text-4xl font-bold md:text-6xl">Escolha seu carro</h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#f8f3e8]/75">
-            Primeiro vamos acertar a parte jogavel: carro, pista, camera e controles. Depois
-            adicionamos os dados do portfolio dentro da cidade.
+            Escolha um veiculo, pegue caixas de nitro e tente melhorar seu tempo de volta no circuito.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {vehicleOptions.map((vehicle) => {
+          {vehicleOptions.map((vehicle, index) => {
             const isSelected = vehicle.id === selectedVehicleId;
             const selectedVariant = getVehicleVariant(vehicle, selectedVehicleVariantId);
 
             return (
-              <div
+              <motion.div
                 key={vehicle.id}
                 aria-label={`Selecionar ${vehicle.name}`}
                 className={`overflow-hidden rounded-3xl text-left shadow-xl transition ${
@@ -98,6 +130,12 @@ export function IntroScreen() {
                 }}
                 role="button"
                 tabIndex={0}
+                custom={index}
+                initial={shouldPlayCardIntro ? "hidden" : false}
+                animate="visible"
+                variants={cardIntroVariants}
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Card
                   className={`h-full overflow-hidden rounded-3xl border bg-[#171d24] ${
@@ -105,7 +143,18 @@ export function IntroScreen() {
                   }`}
                 >
                   <div className="h-64 md:h-72">
-                    <VehiclePreview variant={selectedVariant} vehicle={vehicle} />
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={`${vehicle.id}-${selectedVariant.id}`}
+                        className="h-full"
+                        initial={{ opacity: 0, rotate: -1.2, scale: 0.96, x: -18 }}
+                        animate={{ opacity: 1, rotate: 0, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, rotate: 1.2, scale: 0.98, x: 18 }}
+                        transition={{ duration: 0.24, ease: "easeOut" }}
+                      >
+                        <VehiclePreview variant={selectedVariant} vehicle={vehicle} />
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                   <Card.Content className="p-4">
                     <div className="mb-2 flex items-center justify-between gap-3">
@@ -175,7 +224,7 @@ export function IntroScreen() {
                     </dl>
                   </Card.Content>
                 </Card>
-              </div>
+              </motion.div>
             );
           })}
         </div>
