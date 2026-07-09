@@ -100,11 +100,15 @@ O workflow roda em push para `main` e faz:
 
 No GitHub, configure o repositorio em `Settings -> Pages -> Build and deployment -> Source` como `GitHub Actions`.
 
-URL esperada depois do deploy:
+URL esperada depois do deploy, usando o nome do repositorio publicado:
 
 ```text
-https://geisweiller.github.io/three.js-game-portfolio/
+https://geisweiller.github.io/<nome-do-repositorio>/
 ```
+
+Durante o GitHub Actions, o `basePath` e o `assetPrefix` do Next.js sao derivados de
+`${{ github.event.repository.name }}`. Isso evita que os arquivos em `_next/static`
+sejam gerados com o caminho de outro repositorio.
 
 ## Assets e Creditos
 
