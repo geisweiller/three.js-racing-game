@@ -22,8 +22,6 @@ export type VehicleState = {
 export type VehicleSurface = "track" | "offroad";
 
 const defaultHandling = defaultVehicle.handling;
-const STARTER_MAX_SPEED = 1.5;
-const LINEAR_DAMP = 0.1;
 
 export function getMovementVector(input: MovementInput): Vector3Tuple {
   const x = Number(input.right) - Number(input.left);
@@ -84,7 +82,7 @@ export function updateVehicle(
   const normalizedSpeed = clamp(Math.abs(speed) / handling.maxForwardSpeed, 0, 1);
   const steeringGrip = clamp(normalizedSpeed, 0.28, 1);
   const targetAngular = inputX * steeringGrip * handling.steerRate * surfaceGrip * direction;
-  const angularSpeed = lerp(state.angularSpeed, targetAngular, delta * 4);
+  const angularSpeed = lerp(state.angularSpeed, targetAngular, delta * 6);
   const heading = state.heading + angularSpeed * delta;
 
   if (throttle < 0 && speed > 0.1) {
@@ -97,7 +95,7 @@ export function updateVehicle(
     speed = moveTowardZero(speed, handling.friction * delta);
   }
 
-  speed *= Math.max(0, 1 - LINEAR_DAMP * delta);
+  speed *= Math.max(0, 1 - 0.1 * delta);
   speed = clamp(speed, handling.maxReverseSpeed, forwardSpeedLimit);
 
   const acceleration = lerp(
@@ -105,17 +103,6 @@ export function updateVehicle(
     speed + 0.25 * speed * Math.abs(speed),
     delta,
   );
-  // Formula do Starter Kit Racing, adaptada para a escala de velocidade deste
-  // jogo. O Starter trabalha em 0..1.5, entao normalizamos antes de aplicar os
-  // mesmos thresholds de drift marks, fumaca e skid.
-  const starterSpeed = (speed / handling.maxForwardSpeed) * STARTER_MAX_SPEED;
-  const starterAcceleration = (acceleration / handling.maxForwardSpeed) * STARTER_MAX_SPEED;
-  const starterInputX = -inputX;
-  const starterBodyRoll = -(starterInputX / 5) * starterSpeed;
-  const driftIntensity =
-    (Math.abs(starterSpeed - starterAcceleration) + Math.abs(starterBodyRoll) * 2) *
-    handling.driftMultiplier;
-
   const nextPosition = clampToMap([
     state.position[0] + Math.sin(heading) * speed * delta,
     0,
@@ -125,7 +112,7 @@ export function updateVehicle(
   return {
     acceleration,
     angularSpeed,
-    driftIntensity,
+    driftIntensity: 0,
     position: nextPosition,
     heading,
     speed,

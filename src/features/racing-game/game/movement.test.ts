@@ -131,18 +131,17 @@ describe("updateVehicle", () => {
     expect(kartState.heading).toBeGreaterThan(raceCarState.heading);
   });
 
-  it("reports starter-kit drift intensity while steering at speed", () => {
+  it("keeps drift disabled while steering at speed", () => {
     const nextState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
       input({ forward: true, left: true }),
       0.5,
     );
 
-    expect(nextState.driftIntensity).toBeGreaterThan(0.5);
-    expect(nextState.driftIntensity).toBeGreaterThan(0.7);
+    expect(nextState.driftIntensity).toBe(0);
   });
 
-  it("reports less slip while driving straight than while steering", () => {
+  it("keeps drift disabled while driving straight or turning", () => {
     const straightState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 5 },
       input({ forward: true }),
@@ -154,31 +153,8 @@ describe("updateVehicle", () => {
       0.5,
     );
 
-    expect(straightState.driftIntensity).toBeGreaterThan(0);
-    expect(turningState.driftIntensity).toBeGreaterThan(straightState.driftIntensity);
-  });
-
-  it("uses vehicle handling to give each car a different drift amount", () => {
-    const kart = getVehicleOption("kart");
-    const raceCar = getVehicleOption("race-car");
-    const turningInput = input({ forward: true, left: true });
-
-    const kartState = updateVehicle(
-      { ...baseState, position: [0, 0, 2], heading: 0, speed: 4.5 },
-      turningInput,
-      0.5,
-      "track",
-      kart.handling,
-    );
-    const raceCarState = updateVehicle(
-      { ...baseState, position: [0, 0, 2], heading: 0, speed: 4.5 },
-      turningInput,
-      0.5,
-      "track",
-      raceCar.handling,
-    );
-
-    expect(kartState.driftIntensity).toBeGreaterThan(raceCarState.driftIntensity);
+    expect(straightState.driftIntensity).toBe(0);
+    expect(turningState.driftIntensity).toBe(0);
   });
 
   it("uses nitro boost to raise acceleration and top speed while active", () => {

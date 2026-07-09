@@ -51,9 +51,6 @@ export type VehicleHandling = {
   friction: number;
   // Forca da direcao. Maior vira mais rapido, mas pode deixar o carro nervoso em alta velocidade.
   steerRate: number;
-  // Multiplicador do drift calculado com a formula do Starter Kit Racing.
-  // Maior = derrapa e gera marcas/fumaca/som mais cedo; menor = carro mais plantado.
-  driftMultiplier: number;
   // Multiplicador da velocidade maxima quando estiver fora da pista.
   // Ex: 0.5 significa que fora da pista o carro so alcanca metade da velocidade.
   offroadSpeedMultiplier: number;
@@ -66,8 +63,8 @@ export type VehicleTrail = {
   // Largura visual de cada faixa escura desenhada no chao.
   // Deve acompanhar o tamanho do pneu: carros maiores podem usar marcas mais largas.
   markWidth: number;
-  // Distancia positiva do centro do carro ate o eixo traseiro visual.
-  // Aumentar empurra marcas/fumaca para tras do modelo; diminuir aproxima do centro.
+  // Distancia do centro do carro ate o eixo traseiro, no eixo local frente/traseira.
+  // Negativo fica atras do centro; se a marca nasce no meio do carro, deixe mais negativo.
   rearAxleOffset: number;
   // Metade da distancia lateral entre as rodas traseiras.
   // Aumentar separa as duas marcas; diminuir aproxima as marcas do centro do carro.
@@ -87,7 +84,6 @@ export const vehicleOptions: VehicleOption[] = [
       reverseAcceleration: 5.4,
       friction: 7.2,
       steerRate: 4.2,
-      driftMultiplier: 1.2,
       offroadSpeedMultiplier: 0.52,
       offroadGripMultiplier: 0.72,
     },
@@ -106,7 +102,7 @@ export const vehicleOptions: VehicleOption[] = [
     // Ajusta onde as marcas de pneu nascem para bater com o tamanho deste modelo.
     trail: {
       markWidth: 0.028,
-      rearAxleOffset: 0.22,
+      rearAxleOffset: -0.11,
       wheelHalfWidth: 0.085,
     },
   },
@@ -122,7 +118,6 @@ export const vehicleOptions: VehicleOption[] = [
       reverseAcceleration: 5.2,
       friction: 5.6,
       steerRate: 3.05,
-      driftMultiplier: 0.95,
       offroadSpeedMultiplier: 0.42,
       offroadGripMultiplier: 0.54,
     },
@@ -144,7 +139,7 @@ export const vehicleOptions: VehicleOption[] = [
     wheelOutset: 0.1,
     trail: {
       markWidth: 0.06,
-      rearAxleOffset: 0.52,
+      rearAxleOffset: -0.4,
       wheelHalfWidth: 0.2,
     },
   },
@@ -160,7 +155,6 @@ export const vehicleOptions: VehicleOption[] = [
       reverseAcceleration: 4.6,
       friction: 5.2,
       steerRate: 2.75,
-      driftMultiplier: 0.75,
       offroadSpeedMultiplier: 0.48,
       offroadGripMultiplier: 0.58,
     },
@@ -178,7 +172,7 @@ export const vehicleOptions: VehicleOption[] = [
     previewScale: 1.25,
     trail: {
       markWidth: 0.06,
-      rearAxleOffset: 0.68,
+      rearAxleOffset: -0.6,
       wheelHalfWidth: 0.2,
     },
   },

@@ -17,7 +17,9 @@ const SHIFT_COOLDOWN = 0.35;
 const SHIFT_CUT = 0.12;
 const IMPACT_DURATION = 0.6;
 const NITRO_PICKUP_DURATION = 0.45;
-const SKID_DRIFT_THRESHOLD = 0.5;
+const SKID_DRIFT_THRESHOLD = 0.55;
+const SKID_MIN_SPEED = 2.6;
+const SKID_MIN_TURN_RATE = 0.35;
 
 function remap(value: number, inMin: number, inMax: number, outMin: number, outMax: number) {
   return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
@@ -244,13 +246,16 @@ export function VehicleAudio() {
       audio.engineLoadParam?.setValueAtTime(shifting ? 0 : load, now);
       audio.engineGain?.gain.setTargetAtTime(targetVolume, now, 0.08);
 
-      const skidActive = drift > SKID_DRIFT_THRESHOLD;
+      const skidActive =
+        drift > SKID_DRIFT_THRESHOLD &&
+        Math.abs(state.playerSpeed) > SKID_MIN_SPEED &&
+        Math.abs(state.playerAngularSpeed) > SKID_MIN_TURN_RATE;
       const skidVolume = skidActive
-        ? remap(clamp(drift, SKID_DRIFT_THRESHOLD, 2), SKID_DRIFT_THRESHOLD, 2, 0.08, 0.35)
+        ? remap(clamp(drift, SKID_DRIFT_THRESHOLD, 1.7), SKID_DRIFT_THRESHOLD, 1.7, 0.025, 0.2)
         : 0;
 
-      audio.skid.volume = clamp(skidVolume, 0, 0.35);
-      audio.skid.playbackRate = clamp(speed01 * 3, 1, 3);
+      audio.skid.volume = clamp(skidVolume, 0, 0.2);
+      audio.skid.playbackRate = remap(speed01, 0, 1, 0.85, 1.45);
 
       if (skidActive && audio.skid.paused) {
         audio.skid.play().catch(() => {
