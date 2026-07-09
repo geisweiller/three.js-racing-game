@@ -5,7 +5,7 @@
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { MathUtils, type Group, type Mesh, type Object3D } from "three";
+import { MathUtils, type Group, type Mesh, type Object3D, type PointLight } from "three";
 import { getVehicleOption, getVehicleVariant } from "../data/vehicleOptions";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
 import { useGameStore } from "../game/useGameStore";
@@ -24,6 +24,7 @@ const VEHICLE_COLLIDER_RADIUS = 0.26;
 const TRACK_COLLISION_OUTSET = VEHICLE_COLLIDER_RADIUS / 2;
 const RESPAWN_BLINK_DURATION = 2.5;
 const RESPAWN_BLINK_INTERVAL = 0.16;
+const NITRO_FLASH_DURATION = 0.28;
 const FINISH_TRIGGER_RADIUS = 1.3;
 const LAP_ARM_DISTANCE = 7;
 
@@ -103,6 +104,9 @@ export function Player({ input }: PlayerProps) {
   const impactCooldown = useRef(0);
   const lapStartTime = useRef(0);
   const lapArmed = useRef(false);
+  const lastNitroPickupVersion = useRef(0);
+  const nitroFlash = useRef(0);
+  const nitroLightRef = useRef<PointLight>(null);
   const respawnBlinkRemaining = useRef(0);
   const vehicleState = useRef<VehicleState>({
     acceleration: 0,
@@ -113,6 +117,7 @@ export function Player({ input }: PlayerProps) {
     speed: 0,
   });
   const openedSectionId = useGameStore((state) => state.openedSectionId);
+  const nitroPickupVersion = useGameStore((state) => state.nitroPickupVersion);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
@@ -172,6 +177,20 @@ export function Player({ input }: PlayerProps) {
     player.visible =
       respawnBlinkRemaining.current === 0 ||
       Math.floor(respawnBlinkRemaining.current / RESPAWN_BLINK_INTERVAL) % 2 === 0;
+
+    if (lastNitroPickupVersion.current !== nitroPickupVersion) {
+      lastNitroPickupVersion.current = nitroPickupVersion;
+      nitroFlash.current = NITRO_FLASH_DURATION;
+    }
+
+    nitroFlash.current = Math.max(0, nitroFlash.current - delta);
+    if (nitroLightRef.current) {
+      nitroLightRef.current.intensity = MathUtils.clamp(
+        nitroFlash.current / NITRO_FLASH_DURATION,
+        0,
+        1,
+      ) * 3.5;
+    }
 
     if (openedSectionId) {
       lapStartTime.current += delta;
@@ -295,6 +314,7 @@ export function Player({ input }: PlayerProps) {
 
   return (
     <group ref={playerRef} position={START_POSITION} rotation={[0, START_HEADING, 0]}>
+      <pointLight ref={nitroLightRef} color="#66cfb2" distance={3.4} intensity={0} position={[0, 0.75, 0]} />
       <primitive key={vehicleModelPath} object={vehicleVisual.model} scale={vehicleScale} />
     </group>
   );

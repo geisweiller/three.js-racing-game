@@ -7,6 +7,7 @@ import { DriftMarks } from "./DriftMarks";
 import { FollowCamera } from "./FollowCamera";
 import { Ground } from "./Ground";
 import { Lights } from "./Lights";
+import { NitroPickups } from "./NitroPickups";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
 import { SmokeTrails } from "./SmokeTrails";
@@ -35,6 +36,7 @@ export function ExperienceScene() {
       <Lights />
       <Ground />
       <RacingTrack />
+      <NitroPickups />
       <DriftMarks />
       <SmokeTrails />
       <Player input={input} />

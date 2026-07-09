@@ -19,6 +19,8 @@ export function GameHud() {
   const bestLapTime = useGameStore((state) => state.bestLapTime);
   const currentLapTime = useGameStore((state) => state.currentLapTime);
   const lastLapTime = useGameStore((state) => state.lastLapTime);
+  const nitroCharge = useGameStore((state) => state.nitroCharge);
+  const nitroPickupVersion = useGameStore((state) => state.nitroPickupVersion);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const setGamePhase = useGameStore((state) => state.setGamePhase);
@@ -51,6 +53,21 @@ export function GameHud() {
               <strong>{formatLapTime(bestLapTime)}</strong>
             </div>
           </div>
+          <div
+            key={nitroPickupVersion}
+            className="w-56 rounded-2xl bg-[#111418]/80 px-4 py-3 shadow-lg backdrop-blur nitro-pulse"
+          >
+            <div className="mb-2 flex items-center justify-between text-xs uppercase text-[#f8f3e8]/55">
+              <span>Nitro</span>
+              <strong className="text-[#f8f3e8]">{Math.round(nitroCharge)}%</strong>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-[#66cfb2] transition-[width] duration-300"
+                style={{ width: `${nitroCharge}%` }}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
@@ -68,12 +85,6 @@ export function GameHud() {
           <div className="rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur">
             W/S - Acelera/Freia · A/D - Vira
           </div>
-        </div>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="rounded-full bg-[#111418]/70 px-5 py-3 text-[#f8f3e8]/75 shadow-lg backdrop-blur">
-          Dirija pela cidade para testar carro, camera e estradas
         </div>
       </div>
     </div>

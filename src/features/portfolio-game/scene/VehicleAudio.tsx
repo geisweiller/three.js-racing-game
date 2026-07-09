@@ -15,6 +15,7 @@ const DOWNSHIFT_RPM = 0.35;
 const SHIFT_COOLDOWN = 0.35;
 const SHIFT_CUT = 0.12;
 const IMPACT_DURATION = 0.6;
+const NITRO_PICKUP_DURATION = 0.45;
 const SKID_DRIFT_THRESHOLD = 0.55;
 const SKID_MIN_SPEED = 2.6;
 const SKID_MIN_TURN_RATE = 0.35;
@@ -62,6 +63,24 @@ function createImpactBuffer(context: AudioContext, seed: number, hardness: numbe
   return buffer;
 }
 
+function createNitroPickupBuffer(context: AudioContext) {
+  const length = Math.floor(NITRO_PICKUP_DURATION * context.sampleRate);
+  const buffer = context.createBuffer(1, length, context.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < data.length; i += 1) {
+    const t = i / context.sampleRate;
+    const envelope = Math.sin(Math.PI * Math.min(1, t / NITRO_PICKUP_DURATION));
+    const sweep = 520 + 980 * (t / NITRO_PICKUP_DURATION);
+    const sparkle = Math.sin(Math.PI * 2 * sweep * t) * 0.55;
+    const chime = Math.sin(Math.PI * 2 * 1560 * t) * Math.exp(-t / 0.18) * 0.35;
+
+    data[i] = (sparkle + chime) * envelope * 0.5;
+  }
+
+  return buffer;
+}
+
 export function VehicleAudio() {
   const audioState = useRef<{
     context: AudioContext;
@@ -72,6 +91,8 @@ export function VehicleAudio() {
     initializingEngine: boolean;
     impactBuffers: AudioBuffer[];
     lastImpactVersion: number;
+    lastNitroPickupVersion: number;
+    nitroPickupBuffer: AudioBuffer;
     rpm: number;
     shiftCooldown: number;
     skid: HTMLAudioElement;
@@ -102,6 +123,8 @@ export function VehicleAudio() {
       initializingEngine: false,
       impactBuffers: [createImpactBuffer(context, 1, 0.45), createImpactBuffer(context, 2, 0.85)],
       lastImpactVersion: 0,
+      lastNitroPickupVersion: 0,
+      nitroPickupBuffer: createNitroPickupBuffer(context),
       rpm: 0,
       shiftCooldown: 0,
       skid,
@@ -263,6 +286,19 @@ export function VehicleAudio() {
           gain.connect(audio.context.destination);
           source.start();
         }
+      }
+
+      if (state.nitroPickupVersion !== audio.lastNitroPickupVersion) {
+        audio.lastNitroPickupVersion = state.nitroPickupVersion;
+
+        const source = audio.context.createBufferSource();
+        const gain = audio.context.createGain();
+
+        source.buffer = audio.nitroPickupBuffer;
+        gain.gain.value = 0.18;
+        source.connect(gain);
+        gain.connect(audio.context.destination);
+        source.start();
       }
     }
   });

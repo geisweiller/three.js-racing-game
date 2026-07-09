@@ -27,3 +27,24 @@ a {
 canvas {
   touch-action: none;
 }
+
+@keyframes nitro-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(102 207 178 / 0.5);
+    transform: scale(1);
+  }
+
+  45% {
+    box-shadow: 0 0 0 8px rgb(102 207 178 / 0);
+    transform: scale(1.035);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(102 207 178 / 0);
+    transform: scale(1);
+  }
+}
+
+.nitro-pulse {
+  animation: nitro-pulse 420ms ease-out;
+}

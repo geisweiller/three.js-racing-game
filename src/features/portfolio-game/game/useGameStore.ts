@@ -15,6 +15,8 @@ type GameState = {
   bestLapTime: number | null;
   lapCount: number;
   lastLapTime: number | null;
+  nitroCharge: number;
+  nitroPickupVersion: number;
   openedSectionId: PortfolioSectionId | null;
   playerHeading: number;
   playerPosition: Vector3Tuple;
@@ -27,6 +29,7 @@ type GameState = {
   respawnVersion: number;
   selectedVehicleId: VehicleId;
   selectedVehicleVariantId: VehicleVariantId;
+  addNitroCharge: (amount: number) => void;
   completeLap: (lapTime: number) => void;
   requestRespawn: () => void;
   resetLapTimer: () => void;
@@ -54,6 +57,8 @@ export const useGameStore = create<GameState>((set) => ({
   gamePhase: "intro",
   lapCount: 0,
   lastLapTime: null,
+  nitroCharge: 0,
+  nitroPickupVersion: 0,
   openedSectionId: null,
   playerHeading: START_HEADING,
   playerPosition: START_POSITION,
@@ -66,6 +71,11 @@ export const useGameStore = create<GameState>((set) => ({
   respawnVersion: 0,
   selectedVehicleId: defaultVehicle.id,
   selectedVehicleVariantId: defaultVehicle.variants[0].id,
+  addNitroCharge: (amount) =>
+    set((state) => ({
+      nitroCharge: Math.min(100, state.nitroCharge + amount),
+      nitroPickupVersion: state.nitroPickupVersion + 1,
+    })),
   completeLap: (lapTime) =>
     set((state) => ({
       bestLapTime: state.bestLapTime === null ? lapTime : Math.min(state.bestLapTime, lapTime),
@@ -77,6 +87,7 @@ export const useGameStore = create<GameState>((set) => ({
     set((state) => ({
       activePointId: null,
       currentLapTime: 0,
+      nitroCharge: 0,
       playerAngularSpeed: 0,
       playerDriftIntensity: 0,
       playerImpactIntensity: 0,

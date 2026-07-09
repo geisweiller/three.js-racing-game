@@ -6,7 +6,13 @@ export function Lights() {
         castShadow
         intensity={1.4}
         position={[6, 10, 8]}
-        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0001}
+        shadow-camera-bottom={-40}
+        shadow-camera-left={-40}
+        shadow-camera-right={40}
+        shadow-camera-top={40}
+        shadow-mapSize={[2048, 2048]}
+        shadow-normalBias={0.04}
       />
     </>
   );
