@@ -18,8 +18,8 @@ const decorationModelByKind = {
   empty: `${STARTER_TRACK_BASE_PATH}/decoration-empty.glb`,
   forest: `${STARTER_TRACK_BASE_PATH}/decoration-forest.glb`,
   skyscraperA: "/game-assets/commercial/building-skyscraper-a.glb",
-  tents: `${STARTER_TRACK_BASE_PATH}/decoration-tents.glb`,
   treeSmall: "/game-assets/suburban/tree-small.glb",
+  workshop: `${STARTER_TRACK_BASE_PATH}/decoration-tents.glb`,
 };
 const decorationScaleByKind = {
   buildingA: 0.9,
@@ -27,8 +27,8 @@ const decorationScaleByKind = {
   empty: STARTER_TRACK_MODEL_SCALE,
   forest: STARTER_TRACK_MODEL_SCALE,
   skyscraperA: 0.75,
-  tents: STARTER_TRACK_MODEL_SCALE,
   treeSmall: 1,
+  workshop: STARTER_TRACK_MODEL_SCALE,
 };
 
 export function RacingTrack() {

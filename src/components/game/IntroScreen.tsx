@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Card, Chip } from "@heroui/react";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import { vehicleOptions, type VehicleOption } from "@/features/portfolio-game/data/vehicleOptions";
@@ -54,59 +55,75 @@ export function IntroScreen() {
             return (
               <button
                 key={vehicle.id}
-                className={`overflow-hidden rounded-lg border bg-[#171d24] text-left shadow-xl transition ${
+                className={`overflow-hidden rounded-3xl text-left shadow-xl transition ${
                   isSelected
-                    ? "border-[#f6d365] ring-2 ring-[#f6d365]/45"
-                    : "border-white/10 hover:border-white/30"
+                    ? "ring-2 ring-[#f6d365]/45"
+                    : "hover:ring-2 hover:ring-white/20"
                 }`}
                 onClick={() => setSelectedVehicleId(vehicle.id)}
               >
-                <div className="h-64 md:h-72">
-                  <VehiclePreview vehicle={vehicle} />
-                </div>
-                <div className="p-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <h2 className="text-xl font-semibold">{vehicle.name}</h2>
-                    <span className="rounded-md bg-white/10 px-2 py-1 text-xs text-[#f8f3e8]/70">
-                      {isSelected ? "Selecionado" : "Escolher"}
-                    </span>
+                <Card
+                  className={`h-full overflow-hidden rounded-3xl border bg-[#171d24] ${
+                    isSelected ? "border-[#f6d365]" : "border-white/10"
+                  }`}
+                >
+                  <div className="h-64 md:h-72">
+                    <VehiclePreview vehicle={vehicle} />
                   </div>
-                  <p className="min-h-12 text-sm leading-6 text-[#f8f3e8]/68">
-                    {vehicle.description}
-                  </p>
-                  <dl className="mt-4 grid grid-cols-3 gap-2 text-xs text-[#f8f3e8]/62">
-                    <div>
-                      <dt>Vel.</dt>
-                      <dd className="font-semibold text-[#f8f3e8]">
-                        {vehicle.handling.maxForwardSpeed.toFixed(1)}
-                      </dd>
+                  <Card.Content className="p-4">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <h2 className="text-xl font-semibold">{vehicle.name}</h2>
+                      <Chip
+                        className={
+                          isSelected
+                            ? "rounded-full bg-[#f6d365] px-3 py-1 text-[#111418]"
+                            : "rounded-full bg-white/10 px-3 py-1 text-[#f8f3e8]/70"
+                        }
+                        size="sm"
+                        variant="soft"
+                      >
+                        {isSelected ? "Selecionado" : "Escolher"}
+                      </Chip>
                     </div>
-                    <div>
-                      <dt>Curva</dt>
-                      <dd className="font-semibold text-[#f8f3e8]">
-                        {vehicle.handling.steerRate.toFixed(1)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Acel.</dt>
-                      <dd className="font-semibold text-[#f8f3e8]">
-                        {vehicle.handling.acceleration.toFixed(1)}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
+                    <p className="min-h-12 text-sm leading-6 text-[#f8f3e8]/68">
+                      {vehicle.description}
+                    </p>
+                    <dl className="mt-4 grid grid-cols-3 gap-2 text-xs text-[#f8f3e8]/62">
+                      <div>
+                        <dt>Vel.</dt>
+                        <dd className="font-semibold text-[#f8f3e8]">
+                          {vehicle.handling.maxForwardSpeed.toFixed(1)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Curva</dt>
+                        <dd className="font-semibold text-[#f8f3e8]">
+                          {vehicle.handling.steerRate.toFixed(1)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Acel.</dt>
+                        <dd className="font-semibold text-[#f8f3e8]">
+                          {vehicle.handling.acceleration.toFixed(1)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </Card.Content>
+                </Card>
               </button>
             );
           })}
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            className="rounded-md bg-[#f6d365] px-5 py-3 font-semibold text-[#111418] shadow-lg transition hover:bg-[#ffe08a]"
+          <Button
+            className="rounded-full bg-[#f6d365] px-6 py-3 font-semibold text-[#111418] shadow-lg transition hover:bg-[#ffe08a]"
             onClick={startGame}
+            size="lg"
+            variant="primary"
           >
             Jogar com {selectedVehicle?.name}
-          </button>
+          </Button>
           <span className="text-sm text-[#f8f3e8]/60">W/S acelera e freia · A/D vira · R respawn</span>
         </div>
       </section>

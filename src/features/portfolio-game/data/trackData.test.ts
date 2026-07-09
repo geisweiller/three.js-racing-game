@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   constrainPointToTrack,
   isPointOnTrack,
+  ROAD_WIDTH,
   trackDecorations,
   roadTiles,
   START_POSITION,
@@ -24,6 +25,21 @@ describe("isPointOnTrack", () => {
     expect(isPointOnTrack(constrained.position)).toBe(true);
   });
 
+  it("can move the collision wall outward with a tunable edge tolerance", () => {
+    const vehicleHalfWidth = 0.26;
+    const edgeTolerance = vehicleHalfWidth / 2;
+    const pointNearVisualEdge = [
+      START_POSITION[0] + ROAD_WIDTH / 2 - vehicleHalfWidth + edgeTolerance / 2,
+      START_POSITION[1],
+      START_POSITION[2],
+    ] as const;
+
+    expect(constrainPointToTrack(pointNearVisualEdge, vehicleHalfWidth).collided).toBe(true);
+    expect(
+      constrainPointToTrack(pointNearVisualEdge, vehicleHalfWidth, edgeTolerance).collided,
+    ).toBe(false);
+  });
+
   it("creates a closed circuit with straights and corners", () => {
     expect(roadTiles.some((tile) => tile.kind === "curve")).toBe(true);
     expect(roadTiles.some((tile) => tile.kind === "finish")).toBe(true);
@@ -40,10 +56,21 @@ describe("isPointOnTrack", () => {
     expect(trackDecorations.some((decoration) => decoration.kind === "empty")).toBe(true);
   });
 
-  it("places a single workshop structure close to the racing circuit", () => {
+  it("keeps varied buildings around the racing circuit with one starter-kit workshop tent", () => {
+    expect(trackDecorations.filter((decoration) => decoration.kind === "workshop")).toHaveLength(
+      1,
+    );
+    expect(trackDecorations.filter((decoration) => decoration.id.includes("tents"))).toHaveLength(
+      0,
+    );
+    expect(trackDecorations.some((decoration) => decoration.id === "structure-workshop-1--3")).toBe(
+      true,
+    );
     expect(
-      trackDecorations.filter((decoration) => decoration.id.startsWith("structure-building")),
-    ).toHaveLength(1);
+      trackDecorations.some((decoration) => decoration.id === "structure-base-empty-1--3"),
+    ).toBe(false);
+    expect(trackDecorations.some((decoration) => decoration.kind === "buildingA")).toBe(true);
     expect(trackDecorations.some((decoration) => decoration.kind === "buildingD")).toBe(true);
+    expect(trackDecorations.some((decoration) => decoration.kind === "skyscraperA")).toBe(true);
   });
 });

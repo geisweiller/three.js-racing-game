@@ -21,6 +21,9 @@ type PlayerProps = {
 };
 
 const VEHICLE_COLLIDER_RADIUS = 0.26;
+const TRACK_COLLISION_OUTSET = VEHICLE_COLLIDER_RADIUS / 2;
+const RESPAWN_BLINK_DURATION = 2.5;
+const RESPAWN_BLINK_INTERVAL = 0.16;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -96,6 +99,7 @@ function cloneVehicle(source: Object3D): VehicleVisual {
 export function Player({ input }: PlayerProps) {
   const playerRef = useRef<Group>(null);
   const impactCooldown = useRef(0);
+  const respawnBlinkRemaining = useRef(0);
   const vehicleState = useRef<VehicleState>({
     acceleration: 0,
     angularSpeed: 0,
@@ -124,6 +128,8 @@ export function Player({ input }: PlayerProps) {
   }, [vehicleVisual]);
 
   useEffect(() => {
+    respawnBlinkRemaining.current = RESPAWN_BLINK_DURATION;
+
     vehicleState.current = {
       acceleration: 0,
       angularSpeed: 0,
@@ -142,7 +148,16 @@ export function Player({ input }: PlayerProps) {
   useFrame((_, delta) => {
     const player = playerRef.current;
 
-    if (!player || openedSectionId) {
+    if (!player) {
+      return;
+    }
+
+    respawnBlinkRemaining.current = Math.max(0, respawnBlinkRemaining.current - delta);
+    player.visible =
+      respawnBlinkRemaining.current === 0 ||
+      Math.floor(respawnBlinkRemaining.current / RESPAWN_BLINK_INTERVAL) % 2 === 0;
+
+    if (openedSectionId) {
       return;
     }
 
@@ -154,7 +169,11 @@ export function Player({ input }: PlayerProps) {
       surface,
       selectedVehicle.handling,
     );
-    const trackConstraint = constrainPointToTrack(nextState.position, VEHICLE_COLLIDER_RADIUS);
+    const trackConstraint = constrainPointToTrack(
+      nextState.position,
+      VEHICLE_COLLIDER_RADIUS,
+      TRACK_COLLISION_OUTSET,
+    );
     let impactIntensity = 0;
 
     impactCooldown.current = Math.max(0, impactCooldown.current - delta);

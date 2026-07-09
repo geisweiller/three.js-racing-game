@@ -17,7 +17,7 @@ export function InteractionPanel() {
     <div className="absolute inset-0 z-20 flex items-end justify-center bg-[#111418]/30 p-4 md:items-center">
       <motion.section
         aria-modal="true"
-        className="w-full max-w-xl rounded-lg border border-white/10 bg-[#151a20] p-5 text-[#f8f3e8] shadow-2xl md:p-6"
+        className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#151a20] p-5 text-[#f8f3e8] shadow-2xl md:p-6"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -30,7 +30,7 @@ export function InteractionPanel() {
           </div>
           <button
             aria-label="Fechar painel"
-            className="rounded-md border border-white/15 px-3 py-1 text-sm text-[#f8f3e8]/80 transition hover:bg-white/10"
+            className="rounded-full border border-white/15 px-4 py-1 text-sm text-[#f8f3e8]/80 transition hover:bg-white/10"
             onClick={() => setOpenedSectionId(null)}
           >
             Esc
@@ -41,7 +41,7 @@ export function InteractionPanel() {
 
         <ul className="grid gap-2 sm:grid-cols-2">
           {section.items.map((item) => (
-            <li key={item} className="rounded-md bg-white/8 px-3 py-2 text-sm">
+            <li key={item} className="rounded-2xl bg-white/8 px-3 py-2 text-sm">
               {item}
             </li>
           ))}

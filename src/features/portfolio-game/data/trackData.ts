@@ -13,8 +13,8 @@ export type TrackDecorationKind =
   | "empty"
   | "forest"
   | "skyscraperA"
-  | "tents"
-  | "treeSmall";
+  | "treeSmall"
+  | "workshop";
 export type TrackPropKind = never;
 
 export type RoadTile = {
@@ -112,7 +112,21 @@ const centerlineCells = [
 ] as const;
 
 const structureCells = [
-  [-4, -2, "buildingD", 1, 1.25],
+  [-4, -3, "buildingA", 0, 1.45],
+  [-1, -2, "skyscraperA", 2, 1.35],
+  [1, -3, "workshop", 3, 0.45],
+  [1, -2, "buildingA", 3, 1.35],
+  [1, -1, "buildingD", 0, 1.25],
+  [-1, 0, "treeSmall", 1, 2],
+  [1, 0, "skyscraperA", 2, 1.25],
+  [-4, 0, "buildingD", 3, 1.25],
+  [-4, 1, "buildingA", 0, 1.35],
+  [-1, 1, "treeSmall", 2, 2],
+  [1, 1, "buildingA", 1, 1.35],
+  [1, 2, "buildingD", 2, 1.25],
+  [-3, 3, "skyscraperA", 0, 1.2],
+  [-1, 3, "buildingA", 1, 1.35],
+  [0, 3, "buildingD", 2, 1.25],
 ] as const satisfies readonly (readonly [
   number,
   number,
@@ -186,12 +200,7 @@ function createTrackDecorations() {
             : 0;
       const distanceFromTrackBox = Math.max(distanceX, distanceZ);
       const hash = hashGridCell(gx, gz);
-      const kind: TrackDecorationKind =
-        distanceFromTrackBox <= 1
-          ? hash % 7 === 0
-            ? "tents"
-            : "empty"
-          : "forest";
+      const kind: TrackDecorationKind = distanceFromTrackBox <= 1 ? "empty" : "forest";
 
       decorations.push({
         id: `decoration-${kind}-${gx}-${gz}`,
@@ -202,7 +211,7 @@ function createTrackDecorations() {
     }
   }
 
-  const structureBases = structureCells.map(([gx, gz]) => ({
+  const structureBases = structureCells.filter(([, , kind]) => kind !== "workshop").map(([gx, gz]) => ({
     id: `structure-base-empty-${gx}-${gz}`,
     kind: "empty" as const,
     position: gridToWorld(gx, gz),
@@ -275,11 +284,14 @@ export function isPointOnTrack(position: Vector3Tuple, padding = 0) {
 export function constrainPointToTrack(
   position: Vector3Tuple,
   vehicleRadius = 0,
+  collisionOutset = 0,
 ): { collided: boolean; position: Vector3Tuple } {
   // Mesma ideia do Starter Kit Racing: a pista tem paredes nas bordas e o
   // carro colide como um corpo simples com raio. O centro do carro fica dentro
   // da pista por esse raio, em vez de a propria origem atravessar a parede.
-  const trackLimit = Math.max(0, ROAD_WIDTH / 2 - vehicleRadius);
+  // collisionOutset empurra essa parede para fora do asfalto visual. Usamos
+  // isso para dar uma tolerancia de meia largura de carro antes da batida.
+  const trackLimit = Math.max(0, ROAD_WIDTH / 2 - vehicleRadius + collisionOutset);
   const closest = getClosestTrackPoint(position);
 
   if (closest.distance <= trackLimit) {

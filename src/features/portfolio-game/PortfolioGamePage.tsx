@@ -20,13 +20,20 @@ const GameCanvas = dynamic(
 
 export function PortfolioGamePage() {
   const gamePhase = useGameStore((state) => state.gamePhase);
+  const requestRespawn = useGameStore((state) => state.requestRespawn);
+  const setGamePhase = useGameStore((state) => state.setGamePhase);
   const setOpenedSectionId = useGameStore((state) => state.setOpenedSectionId);
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpenedSectionId(null);
+      if (event.key !== "Escape" || gamePhase !== "playing") {
+        return;
       }
+
+      event.preventDefault();
+      setOpenedSectionId(null);
+      requestRespawn();
+      setGamePhase("intro");
     }
 
     window.addEventListener("keydown", handleEscape);
@@ -34,7 +41,7 @@ export function PortfolioGamePage() {
     return () => {
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [setOpenedSectionId]);
+  }, [gamePhase, requestRespawn, setGamePhase, setOpenedSectionId]);
 
   if (gamePhase === "intro") {
     return <IntroScreen />;
