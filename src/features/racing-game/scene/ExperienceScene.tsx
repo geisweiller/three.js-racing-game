@@ -10,6 +10,7 @@ import { Lights } from "./Lights";
 import { ItemPickups } from "./ItemPickups";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
+import { SlimePuddles } from "./SlimePuddles";
 import { SmokeTrails } from "./SmokeTrails";
 import { VehicleAudio } from "./VehicleAudio";
 
@@ -44,6 +45,7 @@ export function ExperienceScene() {
       <Ground />
       <RacingTrack />
       <ItemPickups />
+      <SlimePuddles />
       <DriftMarks />
       <SmokeTrails />
       <Player input={input} />

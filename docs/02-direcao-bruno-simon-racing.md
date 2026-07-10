@@ -29,7 +29,7 @@ Vamos seguir uma versao menor e mais didatica:
 
 - O jogador escolhe um kart e dirige em um circuito fechado.
 - `W` acelera, `S` freia/re, `A` e `D` viram.
-- `Espaco` usa o item depois que a roleta da caixa termina. Hoje a roleta pode entregar Boost ou Escudo.
+- `Espaco` usa o item depois que a roleta da caixa termina. Hoje a roleta pode entregar Boost, Escudo ou Gosma.
 - A camera fica atras e acima do carro.
 - No MVP, a fisica e arcade e caseira. Antes de adicionar uma engine como Rapier, queremos entender aceleracao, direcao, atrito e camera follow.
 

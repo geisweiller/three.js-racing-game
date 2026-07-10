@@ -28,6 +28,9 @@ const RESPAWN_BLINK_INTERVAL = 0.16;
 const FINISH_TRIGGER_RADIUS = 1.3;
 const LAP_ARM_DISTANCE = 7;
 const ITEM_BOOST_MULTIPLIER = 1.65;
+const SLIME_GRACE_DURATION = 0.55;
+const SLIME_HIT_RADIUS = 0.58;
+const SLIME_SPIN_DURATION = 0.7;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -109,6 +112,8 @@ export function Player({ input }: PlayerProps) {
   const previousItemInput = useRef(false);
   const respawnBlinkRemaining = useRef(0);
   const shieldRef = useRef<Group>(null);
+  const slimeSpinDirection = useRef(1);
+  const slimeSpinRemaining = useRef(0);
   const vehicleState = useRef<VehicleState>({
     acceleration: 0,
     angularSpeed: 0,
@@ -151,6 +156,7 @@ export function Player({ input }: PlayerProps) {
     lapHudTimer.current = 0;
     lapStartTime.current = 0;
     respawnBlinkRemaining.current = RESPAWN_BLINK_DURATION;
+    slimeSpinRemaining.current = 0;
 
     vehicleState.current = {
       acceleration: 0,
@@ -187,7 +193,11 @@ export function Player({ input }: PlayerProps) {
     const boostMultiplier = itemBoostActive ? ITEM_BOOST_MULTIPLIER : 1;
 
     if (input.item && !previousItemInput.current) {
-      activateHeldItem();
+      activateHeldItem({
+        heading: vehicleState.current.heading,
+        position: vehicleState.current.position,
+        time: state.clock.elapsedTime,
+      });
     }
 
     previousItemInput.current = input.item;
@@ -229,6 +239,34 @@ export function Player({ input }: PlayerProps) {
       }
     }
 
+    const droppedSlimePuddles = useGameStore.getState().droppedSlimePuddles;
+    const hitSlimePuddle = droppedSlimePuddles.find(
+      (puddle) =>
+        state.clock.elapsedTime - puddle.createdAt > SLIME_GRACE_DURATION &&
+        Math.hypot(
+          nextState.position[0] - puddle.position[0],
+          nextState.position[2] - puddle.position[2],
+        ) <= SLIME_HIT_RADIUS,
+    );
+
+    if (hitSlimePuddle) {
+      useGameStore.getState().removeSlimePuddle(hitSlimePuddle.id);
+      slimeSpinDirection.current = Math.sign(nextState.angularSpeed || nextState.speed || 1);
+      slimeSpinRemaining.current = SLIME_SPIN_DURATION;
+
+      nextState = {
+        ...nextState,
+        angularSpeed: nextState.angularSpeed + Math.sign(nextState.angularSpeed || 1) * 5.1,
+        driftIntensity: Math.max(nextState.driftIntensity, 1.45),
+        speed: nextState.speed * 0.36,
+      };
+
+      if (impactCooldown.current === 0) {
+        impactIntensity = 0.42;
+        impactCooldown.current = 0.32;
+      }
+    }
+
     vehicleState.current = nextState;
 
     const distanceFromFinish = Math.hypot(
@@ -257,7 +295,14 @@ export function Player({ input }: PlayerProps) {
     }
 
     player.position.set(...nextState.position);
-    player.rotation.y = nextState.heading;
+    slimeSpinRemaining.current = Math.max(0, slimeSpinRemaining.current - delta);
+    const slimeSpinProgress = 1 - slimeSpinRemaining.current / SLIME_SPIN_DURATION;
+    const slimeSpinAngle =
+      slimeSpinRemaining.current > 0
+        ? MathUtils.smoothstep(slimeSpinProgress, 0, 1) * Math.PI * 2 * slimeSpinDirection.current
+        : 0;
+
+    player.rotation.y = nextState.heading + slimeSpinAngle;
     const inputX = Number(input.left) - Number(input.right);
     const speed01 = MathUtils.clamp(
       Math.abs(nextState.speed) / selectedVehicle.handling.maxForwardSpeed,

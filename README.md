@@ -9,8 +9,8 @@ Circuito Kart e um jogo de corrida 3D feito com Next.js, React, Three.js e React
 - O modelo 3D escolhido no preview e o mesmo usado durante a corrida.
 - A pista usa assets do Starter Kit Racing, com colisao mantendo o carro dentro do circuito.
 - Caixas de item aparecem na pista e giram o slot antes de guardar um item.
-- A roleta pode entregar `Boost` ou `Escudo`.
-- `Espaco` usa o item guardado; Boost acelera por alguns segundos e Escudo protege em colisao.
+- A roleta pode entregar `Boost`, `Escudo` ou `Gosma`.
+- `Espaco` usa o item guardado; Boost acelera, Escudo protege em colisao e Gosma deixa uma poça escorregadia na pista.
 - O HUD mostra volta, tempo atual, ultima volta, melhor volta e item atual.
 - Efeitos incluem marcas de pneu, fumaca, som de motor, skid, impacto e coleta de item.
 

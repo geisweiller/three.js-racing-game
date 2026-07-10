@@ -6,7 +6,19 @@ import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/v
 import type { Vector3Tuple } from "./vector";
 
 type GamePhase = "intro" | "playing";
-export type HeldItem = "boost" | "shield";
+export type HeldItem = "boost" | "shield" | "slime";
+
+export type DroppedSlimePuddle = {
+  createdAt: number;
+  id: number;
+  position: Vector3Tuple;
+};
+
+type ItemUseContext = {
+  heading: number;
+  position: Vector3Tuple;
+  time: number;
+};
 
 type GameState = {
   gamePhase: GamePhase;
@@ -14,6 +26,7 @@ type GameState = {
   bestLapTime: number | null;
   lapCount: number;
   lastLapTime: number | null;
+  droppedSlimePuddles: DroppedSlimePuddle[];
   heldItem: HeldItem | null;
   itemBoostRemaining: number;
   itemPickupVersion: number;
@@ -33,6 +46,7 @@ type GameState = {
   selectedVehicleVariantId: VehicleVariantId;
   collectItemBox: () => void;
   completeLap: (lapTime: number) => void;
+  removeSlimePuddle: (id: number) => void;
   requestRespawn: () => void;
   resetLapTimer: () => void;
   setCurrentLapTime: (time: number) => void;
@@ -58,20 +72,33 @@ type GameState = {
     throttle: number;
   }) => void;
   tickItems: (delta: number) => void;
-  activateHeldItem: () => void;
+  activateHeldItem: (context?: ItemUseContext) => void;
 };
 
+const MAX_DROPPED_SLIME_PUDDLES = 12;
+const SLIME_DROP_BACK_OFFSET = 0.9;
 const ITEM_BOOST_DURATION = 1.8;
 const ITEM_ROULETTE_DURATION = 0.9;
 const ITEM_SHIELD_DURATION = 4;
 
 function drawItem(): HeldItem {
-  return Math.random() < 0.65 ? "boost" : "shield";
+  const roll = Math.random();
+
+  if (roll < 0.55) {
+    return "boost";
+  }
+
+  if (roll < 0.8) {
+    return "shield";
+  }
+
+  return "slime";
 }
 
 export const useGameStore = create<GameState>((set) => ({
   bestLapTime: null,
   currentLapTime: 0,
+  droppedSlimePuddles: [],
   gamePhase: "intro",
   heldItem: null,
   itemBoostRemaining: 0,
@@ -111,6 +138,7 @@ export const useGameStore = create<GameState>((set) => ({
   requestRespawn: () =>
     set((state) => ({
       currentLapTime: 0,
+      droppedSlimePuddles: [],
       heldItem: null,
       itemBoostRemaining: 0,
       itemRouletteRemaining: 0,
@@ -128,9 +156,14 @@ export const useGameStore = create<GameState>((set) => ({
     set({
       bestLapTime: null,
       currentLapTime: 0,
+      droppedSlimePuddles: [],
       lapCount: 0,
       lastLapTime: null,
     }),
+  removeSlimePuddle: (id) =>
+    set((state) => ({
+      droppedSlimePuddles: state.droppedSlimePuddles.filter((puddle) => puddle.id !== id),
+    })),
   setCurrentLapTime: (time) => set({ currentLapTime: time }),
   setGamePhase: (phase) => set({ gamePhase: phase }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
@@ -187,7 +220,7 @@ export const useGameStore = create<GameState>((set) => ({
         itemShieldRemaining,
       };
     }),
-  activateHeldItem: () =>
+  activateHeldItem: (context) =>
     set((state) => {
       if (state.heldItem === null || state.itemRouletteRemaining > 0) {
         return state;
@@ -197,6 +230,31 @@ export const useGameStore = create<GameState>((set) => ({
         return {
           heldItem: null,
           itemBoostRemaining: ITEM_BOOST_DURATION,
+          itemUseVersion: state.itemUseVersion + 1,
+        };
+      }
+
+      if (state.heldItem === "slime") {
+        if (!context) {
+          return state;
+        }
+
+        const slimePuddlePosition: Vector3Tuple = [
+          context.position[0] - Math.sin(context.heading) * SLIME_DROP_BACK_OFFSET,
+          0.15,
+          context.position[2] - Math.cos(context.heading) * SLIME_DROP_BACK_OFFSET,
+        ];
+
+        return {
+          droppedSlimePuddles: [
+            ...state.droppedSlimePuddles.slice(-(MAX_DROPPED_SLIME_PUDDLES - 1)),
+            {
+              createdAt: context.time,
+              id: state.itemUseVersion + 1,
+              position: slimePuddlePosition,
+            },
+          ],
+          heldItem: null,
           itemUseVersion: state.itemUseVersion + 1,
         };
       }

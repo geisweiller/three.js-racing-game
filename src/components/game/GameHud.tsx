@@ -35,9 +35,16 @@ export function GameHud() {
   const itemShieldActive = itemShieldRemaining > 0;
   const itemRolling = itemRouletteRemaining > 0;
   const itemActive = itemBoostActive || itemShieldActive;
-  const readyItemLabel = heldItem === "shield" ? "Escudo" : heldItem === "boost" ? "Boost" : "Vazio";
+  const readyItemLabel = heldItem === "slime" ? "Gosma" : heldItem === "shield" ? "Escudo" : heldItem === "boost" ? "Boost" : "Vazio";
   const activeItemLabel = itemShieldActive ? "Escudo!" : itemBoostActive ? "Boost!" : readyItemLabel;
-  const itemColor = itemShieldActive || heldItem === "shield" ? "#7dd3fc" : itemBoostActive || heldItem === "boost" ? "#66cfb2" : "#f8f3e8";
+  const itemColor =
+    itemShieldActive || heldItem === "shield"
+      ? "#7dd3fc"
+      : heldItem === "slime"
+        ? "#91f06d"
+        : itemBoostActive || heldItem === "boost"
+          ? "#66cfb2"
+          : "#f8f3e8";
 
   function returnToMenu() {
     requestRespawn();
