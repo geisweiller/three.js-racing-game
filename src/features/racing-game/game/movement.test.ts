@@ -85,50 +85,50 @@ describe("updateVehicle", () => {
     expect(nextState.speed).toBeLessThan(3.2);
   });
 
-  it("uses vehicle handling to make the formula 1 faster than the race car", () => {
-    const formula = getVehicleOption("formula-1");
-    const raceCar = getVehicleOption("race-car");
+  it("uses kart handling to make the speed-focused kart faster", () => {
+    const speedKart = getVehicleOption("kart-ooli");
+    const agileKart = getVehicleOption("kart-oodi");
     const forwardInput = input({ forward: true });
 
-    const formulaState = updateVehicle(
+    const speedKartState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       forwardInput,
       1,
       "track",
-      formula.handling,
+      speedKart.handling,
     );
-    const raceCarState = updateVehicle(
+    const agileKartState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 0 },
       forwardInput,
       1,
       "track",
-      raceCar.handling,
+      agileKart.handling,
     );
 
-    expect(formulaState.speed).toBeGreaterThan(raceCarState.speed);
+    expect(speedKartState.speed).toBeGreaterThan(agileKartState.speed);
   });
 
-  it("uses vehicle handling to make the kart turn easier than the race car", () => {
-    const kart = getVehicleOption("kart");
-    const raceCar = getVehicleOption("race-car");
+  it("uses kart handling to make the agile kart turn easier", () => {
+    const agileKart = getVehicleOption("kart-oodi");
+    const stableKart = getVehicleOption("kart-oozi");
     const turningInput = input({ forward: true, left: true });
 
-    const kartState = updateVehicle(
+    const agileKartState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
       turningInput,
       0.25,
       "track",
-      kart.handling,
+      agileKart.handling,
     );
-    const raceCarState = updateVehicle(
+    const stableKartState = updateVehicle(
       { ...baseState, position: [0, 0, 2], heading: 0, speed: 3 },
       turningInput,
       0.25,
       "track",
-      raceCar.handling,
+      stableKart.handling,
     );
 
-    expect(kartState.heading).toBeGreaterThan(raceCarState.heading);
+    expect(agileKartState.heading).toBeGreaterThan(stableKartState.heading);
   });
 
   it("reports tire effect intensity while steering at speed", () => {
@@ -158,7 +158,7 @@ describe("updateVehicle", () => {
   });
 
   it("uses nitro boost to raise acceleration and top speed while active", () => {
-    const vehicle = getVehicleOption("race-car");
+    const vehicle = getVehicleOption("kart-oobi");
     const base = { ...baseState, position: [0, 0, 2] as const, heading: 0, speed: 5 };
     const normalState = updateVehicle(base, input({ forward: true }), 0.5, "track", vehicle.handling);
     const boostedState = updateVehicle(

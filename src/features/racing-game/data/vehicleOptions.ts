@@ -1,4 +1,4 @@
-export type VehicleId = "kart" | "formula-1" | "race-car";
+export type VehicleId = "kart-oobi" | "kart-oodi" | "kart-ooli" | "kart-oopi" | "kart-oozi";
 
 export type VehicleVariantId = string;
 
@@ -23,7 +23,8 @@ export type VehicleOption = {
   handling: VehicleHandling;
   // Caminho publico do GLB carregado pelo useGLTF.
   modelPath: string;
-  // Variantes visuais reais. Cada swatch troca o GLB usado no jogo e no preview.
+  // Modelo visual usado no jogo e no preview. Mantemos como lista para o player
+  // reaproveitar o fluxo de carregamento de variantes.
   variants: VehicleVariantOption[];
   // Tamanho do modelo dentro da cena jogavel.
   scale: number;
@@ -72,108 +73,134 @@ export type VehicleTrail = {
 };
 
 export const vehicleOptions: VehicleOption[] = [
-  // Kart: menor, leve e com direcao alta. Bom para aprender a pista e fazer curvas fechadas.
   {
-    id: "kart",
-    name: "Kart",
-    description: "Leve, agil e facil de virar.",
+    id: "kart-oobi",
+    name: "Oobi",
+    description: "Kart equilibrado para aprender a pista.",
     handling: {
-      maxForwardSpeed: 5.4,
+      maxForwardSpeed: 5.6,
       maxReverseSpeed: -2.4,
-      acceleration: 9.5,
+      acceleration: 9.2,
       reverseAcceleration: 5.4,
-      friction: 7.2,
-      steerRate: 4.2,
+      friction: 7.1,
+      steerRate: 4.0,
       offroadSpeedMultiplier: 0.52,
       offroadGripMultiplier: 0.72,
     },
-    modelPath: "/game-assets/cars/kart.glb",
+    modelPath: "/game-assets/cars/kart-oobi.glb",
     variants: [
       { id: "kart-oobi", modelPath: "/game-assets/cars/kart-oobi.glb", name: "Oobi", swatch: "#bca7ff" },
-      { id: "kart-oodi", modelPath: "/game-assets/cars/kart-oodi.glb", name: "Oodi", swatch: "#f5a6bb" },
-      { id: "kart-ooli", modelPath: "/game-assets/cars/kart-ooli.glb", name: "Ooli", swatch: "#f6d365" },
-      { id: "kart-oopi", modelPath: "/game-assets/cars/kart-oopi.glb", name: "Oopi", swatch: "#66cfb2" },
-      { id: "kart-oozi", modelPath: "/game-assets/cars/kart-oozi.glb", name: "Oozi", swatch: "#e8cdb7" },
     ],
-    // Escala do modelo durante o jogo.
     scale: 0.3,
-    // Escala do modelo nos cards da tela inicial.
     previewScale: 1.7,
-    // Ajusta onde as marcas de pneu nascem para bater com o tamanho deste modelo.
     trail: {
       markWidth: 0.028,
       rearAxleOffset: -0.11,
       wheelHalfWidth: 0.085,
     },
   },
-  // Formula 1 futuristica: mais rapida, com menos margem de erro nas curvas.
   {
-    id: "formula-1",
-    name: "Formula 1",
-    description: "Mais rapido, exige curvas mais precisas.",
+    id: "kart-oodi",
+    name: "Oodi",
+    description: "Mais leve, acelera rapido e responde cedo.",
     handling: {
-      maxForwardSpeed: 8.4,
-      maxReverseSpeed: -2.6,
-      acceleration: 11.2,
-      reverseAcceleration: 5.2,
-      friction: 5.6,
-      steerRate: 3.05,
-      offroadSpeedMultiplier: 0.42,
-      offroadGripMultiplier: 0.54,
+      maxForwardSpeed: 5.2,
+      maxReverseSpeed: -2.4,
+      acceleration: 10.4,
+      reverseAcceleration: 5.7,
+      friction: 7.8,
+      steerRate: 4.45,
+      offroadSpeedMultiplier: 0.54,
+      offroadGripMultiplier: 0.76,
     },
-    modelPath: "/game-assets/cars/race-future.glb",
+    modelPath: "/game-assets/cars/kart-oodi.glb",
     variants: [
-      { id: "future-blue", modelPath: "/game-assets/cars/race-future.glb", name: "Azul futuristica", swatch: "#6f8df6" },
-      {
-        id: "classic-red",
-        modelPath: "/game-assets/cars/formula-1.glb",
-        name: "Vermelha",
-        previewScale: 1.45,
-        scale: 0.38,
-        swatch: "#ff5a52",
-        wheelOutset: 0.05,
-      },
+      { id: "kart-oodi", modelPath: "/game-assets/cars/kart-oodi.glb", name: "Oodi", swatch: "#f5a6bb" },
     ],
-    scale: 0.4,
-    previewScale: 1.5,
-    wheelOutset: 0.1,
+    scale: 0.3,
+    previewScale: 1.7,
     trail: {
-      markWidth: 0.06,
-      rearAxleOffset: -0.4,
-      wheelHalfWidth: 0.2,
+      markWidth: 0.028,
+      rearAxleOffset: -0.11,
+      wheelHalfWidth: 0.085,
     },
   },
-  // Sedan esportivo: meio termo entre velocidade e estabilidade.
   {
-    id: "race-car",
-    name: "Carro de corrida",
-    description: "Equilibrado, rapido e mais estavel que a F1.",
+    id: "kart-ooli",
+    name: "Ooli",
+    description: "O mais veloz, bom para retas longas.",
     handling: {
-      maxForwardSpeed: 6.6,
-      maxReverseSpeed: -2.2,
-      acceleration: 8.2,
-      reverseAcceleration: 4.6,
-      friction: 5.2,
-      steerRate: 2.75,
-      offroadSpeedMultiplier: 0.48,
-      offroadGripMultiplier: 0.58,
+      maxForwardSpeed: 6.1,
+      maxReverseSpeed: -2.35,
+      acceleration: 8.5,
+      reverseAcceleration: 5.1,
+      friction: 6.5,
+      steerRate: 3.65,
+      offroadSpeedMultiplier: 0.5,
+      offroadGripMultiplier: 0.68,
     },
-    modelPath: "/game-assets/cars/sedan-sports.glb",
+    modelPath: "/game-assets/cars/kart-ooli.glb",
     variants: [
-      { id: "sedan-orange", modelPath: "/game-assets/cars/sedan-sports.glb", name: "Laranja", swatch: "#ff884d" },
-      {
-        id: "sport-hatch",
-        modelPath: "/game-assets/cars/hatchback-sports.glb",
-        name: "Sport hatch",
-        swatch: "#66cf9a",
-      },
+      { id: "kart-ooli", modelPath: "/game-assets/cars/kart-ooli.glb", name: "Ooli", swatch: "#f6d365" },
     ],
-    scale: 0.4,
-    previewScale: 1.25,
+    scale: 0.3,
+    previewScale: 1.7,
     trail: {
-      markWidth: 0.06,
-      rearAxleOffset: -0.6,
-      wheelHalfWidth: 0.2,
+      markWidth: 0.028,
+      rearAxleOffset: -0.11,
+      wheelHalfWidth: 0.085,
+    },
+  },
+  {
+    id: "kart-oopi",
+    name: "Oopi",
+    description: "Aderente, perdoa erros fora da linha ideal.",
+    handling: {
+      maxForwardSpeed: 5.35,
+      maxReverseSpeed: -2.4,
+      acceleration: 9.0,
+      reverseAcceleration: 5.4,
+      friction: 7.5,
+      steerRate: 4.25,
+      offroadSpeedMultiplier: 0.58,
+      offroadGripMultiplier: 0.82,
+    },
+    modelPath: "/game-assets/cars/kart-oopi.glb",
+    variants: [
+      { id: "kart-oopi", modelPath: "/game-assets/cars/kart-oopi.glb", name: "Oopi", swatch: "#66cfb2" },
+    ],
+    scale: 0.3,
+    previewScale: 1.7,
+    trail: {
+      markWidth: 0.028,
+      rearAxleOffset: -0.11,
+      wheelHalfWidth: 0.085,
+    },
+  },
+  {
+    id: "kart-oozi",
+    name: "Oozi",
+    description: "Mais pesado, estavel e previsivel em curvas.",
+    handling: {
+      maxForwardSpeed: 5.75,
+      maxReverseSpeed: -2.25,
+      acceleration: 8.4,
+      reverseAcceleration: 4.9,
+      friction: 6.9,
+      steerRate: 3.8,
+      offroadSpeedMultiplier: 0.5,
+      offroadGripMultiplier: 0.7,
+    },
+    modelPath: "/game-assets/cars/kart-oozi.glb",
+    variants: [
+      { id: "kart-oozi", modelPath: "/game-assets/cars/kart-oozi.glb", name: "Oozi", swatch: "#e8cdb7" },
+    ],
+    scale: 0.3,
+    previewScale: 1.7,
+    trail: {
+      markWidth: 0.028,
+      rearAxleOffset: -0.11,
+      wheelHalfWidth: 0.085,
     },
   },
 ];

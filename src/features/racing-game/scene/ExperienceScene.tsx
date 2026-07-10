@@ -16,20 +16,31 @@ import { VehicleAudio } from "./VehicleAudio";
 export function ExperienceScene() {
   const input = useKeyboardControls();
   const requestRespawn = useGameStore((state) => state.requestRespawn);
+  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
 
   useEffect(() => {
-    function handleRespawn(event: KeyboardEvent) {
-      if (event.key.toLowerCase() === "r") {
+    function handleHotkeys(event: KeyboardEvent) {
+      if (event.repeat) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+
+      if (key === "r") {
         requestRespawn();
+      }
+
+      if (key === "v") {
+        toggleCameraMode();
       }
     }
 
-    window.addEventListener("keydown", handleRespawn);
+    window.addEventListener("keydown", handleHotkeys);
 
     return () => {
-      window.removeEventListener("keydown", handleRespawn);
+      window.removeEventListener("keydown", handleHotkeys);
     };
-  }, [requestRespawn]);
+  }, [requestRespawn, toggleCameraMode]);
 
   return (
     <>

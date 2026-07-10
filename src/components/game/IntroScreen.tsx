@@ -14,6 +14,13 @@ import {
 import { useGameStore } from "@/features/racing-game/game/useGameStore";
 import { GlbModel } from "@/features/racing-game/scene/GlbModel";
 
+const statMax = {
+  acceleration: Math.max(...vehicleOptions.map((vehicle) => vehicle.handling.acceleration)),
+  grip: Math.max(...vehicleOptions.map((vehicle) => vehicle.handling.offroadGripMultiplier)),
+  speed: Math.max(...vehicleOptions.map((vehicle) => vehicle.handling.maxForwardSpeed)),
+  steering: Math.max(...vehicleOptions.map((vehicle) => vehicle.handling.steerRate)),
+};
+
 function ModelLoading() {
   return (
     <Html center>
@@ -84,13 +91,13 @@ export function IntroScreen() {
           <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#f6d365]">
             Racing game prototype
           </p>
-          <h1 className="text-4xl font-bold md:text-6xl">Escolha seu carro</h1>
+          <h1 className="text-4xl font-bold md:text-6xl">Escolha seu kart</h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#f8f3e8]/75">
-            Escolha um veiculo, pegue caixas de nitro e tente melhorar seu tempo de volta no circuito.
+            Escolha um kart, pegue caixas de nitro e tente melhorar seu tempo de volta no circuito.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {vehicleOptions.map((vehicle, index) => {
             const isSelected = vehicle.id === selectedVehicleId;
             const selectedVariant = getVehicleVariant(vehicle, selectedVehicleVariantId);
@@ -161,54 +168,28 @@ export function IntroScreen() {
                     <p className="min-h-12 text-sm leading-6 text-[#f8f3e8]/68">
                       {vehicle.description}
                     </p>
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-xs text-[#f8f3e8]/55">Modelo</span>
-                      <div className="flex gap-2">
-                        {vehicle.variants.map((variant) => {
-                          const variantIsSelected = selectedVariant.id === variant.id;
-
-                          return (
-                            <button
-                              key={variant.id}
-                              aria-label={`Selecionar modelo ${variant.name} para ${vehicle.name}`}
-                              className={`h-7 w-7 rounded-full border transition ${
-                                variantIsSelected
-                                  ? "border-[#f6d365] ring-2 ring-[#f6d365]/45"
-                                  : "border-white/25 hover:border-white/60"
-                              }`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setSelectedVehicleId(vehicle.id);
-                                setSelectedVehicleVariantId(variant.id);
-                              }}
-                              style={{ backgroundColor: variant.swatch }}
-                              title={variant.name}
-                              type="button"
-                            />
-                          );
-                        })}
-                      </div>
+                    <div className="mt-4 space-y-2">
+                      <StatBar
+                        label="Velocidade"
+                        value={vehicle.handling.maxForwardSpeed}
+                        max={statMax.speed}
+                      />
+                      <StatBar
+                        label="Aceleracao"
+                        value={vehicle.handling.acceleration}
+                        max={statMax.acceleration}
+                      />
+                      <StatBar
+                        label="Curva"
+                        value={vehicle.handling.steerRate}
+                        max={statMax.steering}
+                      />
+                      <StatBar
+                        label="Aderencia"
+                        value={vehicle.handling.offroadGripMultiplier}
+                        max={statMax.grip}
+                      />
                     </div>
-                    <dl className="mt-4 grid grid-cols-3 gap-2 text-xs text-[#f8f3e8]/62">
-                      <div>
-                        <dt>Vel.</dt>
-                        <dd className="font-semibold text-[#f8f3e8]">
-                          {vehicle.handling.maxForwardSpeed.toFixed(1)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Curva</dt>
-                        <dd className="font-semibold text-[#f8f3e8]">
-                          {vehicle.handling.steerRate.toFixed(1)}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Acel.</dt>
-                        <dd className="font-semibold text-[#f8f3e8]">
-                          {vehicle.handling.acceleration.toFixed(1)}
-                        </dd>
-                      </div>
-                    </dl>
                   </Card.Content>
                 </Card>
               </motion.div>
@@ -223,10 +204,31 @@ export function IntroScreen() {
             size="lg"
             variant="primary"
           >
-            Jogar com {selectedVehicle?.name}
+            Correr com {selectedVehicle?.name}
           </Button>
         </div>
       </section>
     </main>
+  );
+}
+
+function StatBar({ label, max, value }: { label: string; max: number; value: number }) {
+  const percentage = `${Math.min(100, Math.max(0, (value / max) * 100))}%`;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-2 text-[0.64rem] uppercase text-[#f8f3e8]/52">
+        <span>{label}</span>
+        <span className="font-semibold text-[#f8f3e8]/75">{Math.round((value / max) * 100)}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          className="h-full rounded-full bg-[#f6d365]"
+          initial={{ width: 0 }}
+          animate={{ width: percentage }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        />
+      </div>
+    </div>
   );
 }

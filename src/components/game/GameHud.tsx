@@ -137,31 +137,42 @@ export function GameHud() {
         >
           <motion.button
             aria-label="Alternar camera"
-            className="pointer-events-auto w-32 rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
+            className="pointer-events-auto flex h-9 w-36 items-center justify-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={toggleCameraMode}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
           >
-            {cameraMode === "top" ? "Camera: Topo" : "Camera: Tras"}
+            <span>Camera</span>
+            <span>{cameraMode === "current" ? "Atual" : "Perto"}</span>
+            <Keycap>V</Keycap>
           </motion.button>
           <motion.button
-            className="pointer-events-auto rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
+            className="pointer-events-auto flex h-9 items-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={returnToMenu}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
           >
-            Esc - Menu
+            <Keycap>Esc</Keycap>
+            <span>Menu</span>
           </motion.button>
           <motion.button
-            className="pointer-events-auto rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
+            className="pointer-events-auto flex h-9 items-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={requestRespawn}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
           >
-            R - Respawn
+            <Keycap>R</Keycap>
+            <span>Respawn</span>
           </motion.button>
-          <div className="rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur">
-            W/S - Acelera/Freia · A/D - Vira · Espaço - Nitro
+          <div className="flex h-9 items-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur">
+            <Keycap>W</Keycap>
+            <Keycap>S</Keycap>
+            <span>Acel/Freia</span>
+            <Keycap>A</Keycap>
+            <Keycap>D</Keycap>
+            <span>Vira</span>
+            <Keycap>Space</Keycap>
+            <span>Nitro</span>
           </div>
         </motion.div>
       </div>
@@ -360,5 +371,13 @@ function HudPanel({ children, className }: { children: React.ReactNode; classNam
     >
       {children}
     </motion.div>
+  );
+}
+
+function Keycap({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-white/15 bg-white/10 px-1.5 text-[0.62rem] font-bold leading-none text-[#f8f3e8] shadow-inner">
+      {children}
+    </kbd>
   );
 }

@@ -6,7 +6,7 @@ import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/v
 import type { Vector3Tuple } from "./vector";
 
 type GamePhase = "intro" | "playing";
-export type CameraMode = "top" | "thirdPerson";
+export type CameraMode = "current" | "close";
 
 type GameState = {
   cameraMode: CameraMode;
@@ -53,7 +53,7 @@ type GameState = {
 
 export const useGameStore = create<GameState>((set) => ({
   bestLapTime: null,
-  cameraMode: "top",
+  cameraMode: "current",
   currentLapTime: 0,
   gamePhase: "intro",
   lapCount: 0,
@@ -131,6 +131,6 @@ export const useGameStore = create<GameState>((set) => ({
     })),
   toggleCameraMode: () =>
     set((state) => ({
-      cameraMode: state.cameraMode === "top" ? "thirdPerson" : "top",
+      cameraMode: state.cameraMode === "current" ? "close" : "current",
     })),
 }));
