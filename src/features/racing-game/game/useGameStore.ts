@@ -6,8 +6,10 @@ import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/v
 import type { Vector3Tuple } from "./vector";
 
 type GamePhase = "intro" | "playing";
+export type CameraMode = "top" | "thirdPerson";
 
 type GameState = {
+  cameraMode: CameraMode;
   gamePhase: GamePhase;
   currentLapTime: number;
   bestLapTime: number | null;
@@ -33,6 +35,7 @@ type GameState = {
   requestRespawn: () => void;
   resetLapTimer: () => void;
   setCurrentLapTime: (time: number) => void;
+  setCameraMode: (mode: CameraMode) => void;
   setGamePhase: (phase: GamePhase) => void;
   setPlayerHeading: (heading: number) => void;
   setSelectedVehicleId: (id: VehicleId) => void;
@@ -45,10 +48,12 @@ type GameState = {
     speed: number;
     throttle: number;
   }) => void;
+  toggleCameraMode: () => void;
 };
 
 export const useGameStore = create<GameState>((set) => ({
   bestLapTime: null,
+  cameraMode: "top",
   currentLapTime: 0,
   gamePhase: "intro",
   lapCount: 0,
@@ -106,6 +111,7 @@ export const useGameStore = create<GameState>((set) => ({
       lastLapTime: null,
     }),
   setCurrentLapTime: (time) => set({ currentLapTime: time }),
+  setCameraMode: (mode) => set({ cameraMode: mode }),
   setGamePhase: (phase) => set({ gamePhase: phase }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
   setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
@@ -122,5 +128,9 @@ export const useGameStore = create<GameState>((set) => ({
           : state.playerImpactVersion,
       playerSpeed: telemetry.speed,
       playerThrottle: telemetry.throttle,
+    })),
+  toggleCameraMode: () =>
+    set((state) => ({
+      cameraMode: state.cameraMode === "top" ? "thirdPerson" : "top",
     })),
 }));

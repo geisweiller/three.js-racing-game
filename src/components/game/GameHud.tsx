@@ -54,7 +54,9 @@ export function GameHud() {
   const playerSpeed = useGameStore((state) => state.playerSpeed);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
+  const cameraMode = useGameStore((state) => state.cameraMode);
   const setGamePhase = useGameStore((state) => state.setGamePhase);
+  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const speedKmh = Math.round(Math.abs(playerSpeed) * 18);
   const maxSpeedKmh = Math.ceil((selectedVehicle.handling.maxForwardSpeed * 18 * 1.45) / 10) * 10;
@@ -133,6 +135,15 @@ export function GameHud() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18, duration: 0.25 }}
         >
+          <motion.button
+            aria-label="Alternar camera"
+            className="pointer-events-auto w-32 rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
+            onClick={toggleCameraMode}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            {cameraMode === "top" ? "Camera: Topo" : "Camera: Tras"}
+          </motion.button>
           <motion.button
             className="pointer-events-auto rounded-full bg-[#111418]/80 px-4 py-2 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={returnToMenu}
