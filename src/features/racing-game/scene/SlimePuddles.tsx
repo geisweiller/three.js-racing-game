@@ -3,11 +3,12 @@
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import type { Group, Mesh, Object3D } from "three";
+import { MeshStandardMaterial, type Group, type Mesh, type Object3D } from "three";
 import { withAssetBase } from "../game/assetPath";
 import { useGameStore, type DroppedSlimePuddle } from "../game/useGameStore";
 
 const GOO_MODEL_PATH = "/game-assets/effects/goo.glb";
+const GOO_MODEL_SCALE = 0.36;
 
 function isMesh(object: Object3D): object is Mesh {
   return "isMesh" in object;
@@ -15,10 +16,18 @@ function isMesh(object: Object3D): object is Mesh {
 
 function cloneGoo(source: Object3D) {
   const clone = source.clone(true);
+  const slimeMaterial = new MeshStandardMaterial({
+    color: "#5eea62",
+    emissive: "#123f18",
+    emissiveIntensity: 0.18,
+    metalness: 0,
+    roughness: 0.48,
+  });
 
   clone.traverse((child) => {
     if (isMesh(child)) {
       child.castShadow = false;
+      child.material = slimeMaterial;
       child.receiveShadow = true;
     }
   });
@@ -59,7 +68,7 @@ function SlimePuddle({ gooModel, puddle }: { gooModel: Object3D; puddle: Dropped
       position={[puddle.position[0], 0.095, puddle.position[2]]}
       rotation={[0, puddle.id * 0.47, 0]}
     >
-      <primitive object={model} scale={0.58} />
+      <primitive object={model} scale={GOO_MODEL_SCALE} />
     </group>
   );
 }
