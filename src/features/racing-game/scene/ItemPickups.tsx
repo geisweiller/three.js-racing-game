@@ -14,10 +14,9 @@ const MAX_PICKUPS = 10;
 const SPAWN_INTERVAL = 5;
 const PICKUP_RADIUS = 0.85;
 const MIN_SPAWN_DISTANCE_FROM_PLAYER = 5;
-const NITRO_PER_PICKUP = 25;
 const BOX_Y = 0.28;
 
-type NitroPickup = {
+type ItemPickup = {
   id: number;
   position: Vector3Tuple;
 };
@@ -30,7 +29,7 @@ type CollectionEffect = {
 
 const spawnPoints = roadTiles.map((tile) => tile.position);
 
-function pickSpawnPoint(activePickups: NitroPickup[], playerPosition: Vector3Tuple) {
+function pickSpawnPoint(activePickups: ItemPickup[], playerPosition: Vector3Tuple) {
   const used = new Set(activePickups.map((pickup) => `${pickup.position[0]},${pickup.position[2]}`));
   const candidates = spawnPoints.filter(
     (point) =>
@@ -46,14 +45,14 @@ function distance2D(a: Vector3Tuple, b: Vector3Tuple) {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
 }
 
-export function NitroPickups() {
+export function ItemPickups() {
   const nextId = useRef(1);
   const lastRespawnVersion = useRef(0);
   const spawnTimer = useRef(0);
   const nextEffectId = useRef(1);
   const [effects, setEffects] = useState<CollectionEffect[]>([]);
-  const [pickups, setPickups] = useState<NitroPickup[]>([]);
-  const addNitroCharge = useGameStore((state) => state.addNitroCharge);
+  const [pickups, setPickups] = useState<ItemPickup[]>([]);
+  const collectItemBox = useGameStore((state) => state.collectItemBox);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
 
   useFrame((_, delta) => {
@@ -65,11 +64,15 @@ export function NitroPickups() {
       return;
     }
 
-    setEffects((current) =>
-      current
+    setEffects((current) => {
+      if (current.length === 0) {
+        return current;
+      }
+
+      return current
         .map((effect) => ({ ...effect, age: effect.age + delta }))
-        .filter((effect) => effect.age < 0.8),
-    );
+        .filter((effect) => effect.age < 0.8);
+    });
 
     spawnTimer.current += delta;
 
@@ -110,23 +113,23 @@ export function NitroPickups() {
           position: pickup.position,
         })),
       ]);
-      addNitroCharge(collectedPickups.length * NITRO_PER_PICKUP);
+      collectedPickups.forEach(() => collectItemBox());
     }
   });
 
   return (
     <group>
       {pickups.map((pickup) => (
-        <NitroPickupBox key={pickup.id} pickup={pickup} />
+        <ItemPickupBox key={pickup.id} pickup={pickup} />
       ))}
       {effects.map((effect) => (
-        <NitroCollectEffect key={effect.id} effect={effect} />
+        <ItemCollectEffect key={effect.id} effect={effect} />
       ))}
     </group>
   );
 }
 
-function NitroPickupBox({ pickup }: { pickup: NitroPickup }) {
+function ItemPickupBox({ pickup }: { pickup: ItemPickup }) {
   const groupRef = useRef<Group>(null);
 
   useFrame((_, delta) => {
@@ -145,7 +148,7 @@ function NitroPickupBox({ pickup }: { pickup: NitroPickup }) {
   );
 }
 
-function NitroCollectEffect({ effect }: { effect: CollectionEffect }) {
+function ItemCollectEffect({ effect }: { effect: CollectionEffect }) {
   const progress = Math.min(1, effect.age / 0.8);
   const opacity = 1 - progress;
   const ringScale = 0.6 + progress * 1.8;
@@ -174,7 +177,7 @@ function NitroCollectEffect({ effect }: { effect: CollectionEffect }) {
           className="rounded-full bg-[#111418]/85 px-3 py-1 text-xs font-semibold text-[#66cfb2] shadow-lg backdrop-blur"
           style={{ opacity }}
         >
-          +25%
+          Item
         </div>
       </Html>
     </group>

@@ -16,50 +16,28 @@ function formatLapTime(time: number | null) {
   return `${minutes}:${seconds}.${milliseconds}`;
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
-  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
-
-  return {
-    x: centerX + radius * Math.cos(angleInRadians),
-    y: centerY + radius * Math.sin(angleInRadians),
-  };
-}
-
-function describeArc(
-  centerX: number,
-  centerY: number,
-  radius: number,
-  startAngle: number,
-  endAngle: number,
-) {
-  const start = polarToCartesian(centerX, centerY, radius, endAngle);
-  const end = polarToCartesian(centerX, centerY, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-
-  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
-}
-
 export function GameHud() {
   const bestLapTime = useGameStore((state) => state.bestLapTime);
   const currentLapTime = useGameStore((state) => state.currentLapTime);
+  const heldItem = useGameStore((state) => state.heldItem);
+  const itemBoostRemaining = useGameStore((state) => state.itemBoostRemaining);
+  const itemPickupVersion = useGameStore((state) => state.itemPickupVersion);
+  const itemRouletteRemaining = useGameStore((state) => state.itemRouletteRemaining);
+  const itemShieldRemaining = useGameStore((state) => state.itemShieldRemaining);
+  const itemUseVersion = useGameStore((state) => state.itemUseVersion);
   const lapCount = useGameStore((state) => state.lapCount);
   const lastLapTime = useGameStore((state) => state.lastLapTime);
-  const nitroActive = useGameStore((state) => state.nitroActive);
-  const nitroCharge = useGameStore((state) => state.nitroCharge);
-  const nitroPickupVersion = useGameStore((state) => state.nitroPickupVersion);
-  const playerSpeed = useGameStore((state) => state.playerSpeed);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
-  const cameraMode = useGameStore((state) => state.cameraMode);
   const setGamePhase = useGameStore((state) => state.setGamePhase);
-  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
-  const speedKmh = Math.round(Math.abs(playerSpeed) * 18);
-  const maxSpeedKmh = Math.ceil((selectedVehicle.handling.maxForwardSpeed * 18 * 1.45) / 10) * 10;
+  const itemBoostActive = itemBoostRemaining > 0;
+  const itemShieldActive = itemShieldRemaining > 0;
+  const itemRolling = itemRouletteRemaining > 0;
+  const itemActive = itemBoostActive || itemShieldActive;
+  const readyItemLabel = heldItem === "shield" ? "Escudo" : heldItem === "boost" ? "Boost" : "Vazio";
+  const activeItemLabel = itemShieldActive ? "Escudo!" : itemBoostActive ? "Boost!" : readyItemLabel;
+  const itemColor = itemShieldActive || heldItem === "shield" ? "#7dd3fc" : itemBoostActive || heldItem === "boost" ? "#66cfb2" : "#f8f3e8";
 
   function returnToMenu() {
     requestRespawn();
@@ -83,10 +61,10 @@ export function GameHud() {
           }}
         >
           <HudPanel className="px-4 py-3">
-            <strong className="block text-base">Circuito Nitro</strong>
+            <strong className="block text-base">Circuito Kart</strong>
             <span className="text-[#f8f3e8]/75">Veiculo: {selectedVehicle.name}</span>
           </HudPanel>
-          <HudPanel className="grid w-[23rem] grid-cols-4 gap-3 px-4 py-2.5">
+          <HudPanel className="grid w-92 grid-cols-4 gap-3 px-4 py-2.5">
             <div>
               <span className="block text-[0.62rem] uppercase text-[#f8f3e8]/45">Volta</span>
               <motion.strong
@@ -136,17 +114,6 @@ export function GameHud() {
           transition={{ delay: 0.18, duration: 0.25 }}
         >
           <motion.button
-            aria-label="Alternar camera"
-            className="pointer-events-auto flex h-9 w-36 items-center justify-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
-            onClick={toggleCameraMode}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-          >
-            <span>Camera</span>
-            <span>{cameraMode === "current" ? "Atual" : "Perto"}</span>
-            <Keycap>V</Keycap>
-          </motion.button>
-          <motion.button
             className="pointer-events-auto flex h-9 items-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={returnToMenu}
             whileHover={{ scale: 1.04 }}
@@ -172,23 +139,23 @@ export function GameHud() {
             <Keycap>D</Keycap>
             <span>Vira</span>
             <Keycap>Space</Keycap>
-            <span>Nitro</span>
+            <span>Item</span>
           </div>
         </motion.div>
       </div>
 
       <div className="absolute left-1/2 top-24 -translate-x-1/2">
         <AnimatePresence>
-          {nitroPickupVersion > 0 ? (
+          {itemPickupVersion > 0 ? (
             <motion.div
-              key={`nitro-${nitroPickupVersion}`}
-              className="rounded-full border border-[#66cfb2]/40 bg-[#111418]/85 px-5 py-2 text-sm font-bold uppercase tracking-wide text-[#66cfb2] shadow-xl backdrop-blur"
+              key={`item-${itemPickupVersion}`}
+              className="rounded-full border border-[#f6d365]/40 bg-[#111418]/85 px-5 py-2 text-sm font-bold uppercase tracking-wide text-[#f6d365] shadow-xl backdrop-blur"
               initial={{ opacity: 0, scale: 0.82, y: 12 }}
               animate={{ opacity: [0, 1, 1, 0], scale: [0.82, 1.08, 1, 0.98], y: [12, 0, 0, -10] }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.05, times: [0, 0.18, 0.72, 1] }}
             >
-              Nitro +25%
+              Caixa de item
             </motion.div>
           ) : null}
         </AnimatePresence>
@@ -215,146 +182,48 @@ export function GameHud() {
       </div>
 
       <motion.div
-        className="absolute bottom-5 left-1/2 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#111418]/82 px-4 py-3 shadow-2xl backdrop-blur"
-        key={nitroPickupVersion}
-        initial={{ y: 18, scale: 0.96, boxShadow: "0 0 0 0 rgb(102 207 178 / 0)" }}
+        className="absolute bottom-5 left-1/2 w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#111418]/82 px-4 py-3 shadow-2xl backdrop-blur"
+        key={`${itemPickupVersion}-${itemUseVersion}-${itemRolling}`}
+        initial={{ y: 12, scale: 0.96, boxShadow: "0 0 0 0 rgb(102 207 178 / 0)" }}
         animate={{
           y: 0,
-          scale: 1,
-          boxShadow:
-            nitroPickupVersion > 0
-              ? "0 0 32px 0 rgb(102 207 178 / 0.36)"
-              : "0 0 0 0 rgb(102 207 178 / 0)",
+          scale: itemActive || itemRolling ? 1.04 : 1,
+          boxShadow: itemPickupVersion > 0 ? "0 0 32px 0 rgb(102 207 178 / 0.28)" : "0 0 0 0 rgb(102 207 178 / 0)",
         }}
-        transition={{ duration: 0.28 }}
+        transition={{ duration: 0.24 }}
       >
         <div className="mb-2 flex items-center justify-between text-xs uppercase text-[#f8f3e8]/55">
-          <span>Nitro</span>
-          <motion.strong
-            className="text-[#f8f3e8]"
-            animate={{ color: nitroActive ? "#66cfb2" : "#f8f3e8" }}
-          >
-            {Math.round(nitroCharge)}%
-          </motion.strong>
+          <span>Item</span>
+          <Keycap>Space</Keycap>
         </div>
-        <div className="h-4 overflow-hidden rounded-full bg-white/10">
-          <motion.div
-            className="relative h-full rounded-full bg-[#66cfb2]"
-            initial={false}
-            animate={{
-              width: `${nitroCharge}%`,
-              boxShadow: nitroActive
-                ? "0 0 20px 3px rgb(102 207 178 / 0.65)"
-                : "0 0 0 0 rgb(102 207 178 / 0)",
-            }}
-            transition={{ type: "spring", stiffness: 180, damping: 24 }}
-          >
-            <motion.span
-              className="absolute inset-y-0 right-0 w-10 bg-white/35 blur-sm"
-              animate={{ opacity: nitroActive ? [0.25, 0.85, 0.25] : 0 }}
-              transition={{ duration: 0.65, repeat: nitroActive ? Infinity : 0 }}
+        <div className="relative flex h-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/8">
+          {itemRolling ? (
+            <motion.div
+              className="absolute inset-y-0 w-14 bg-[#66cfb2]/20 blur-md"
+              animate={{ x: [-110, 110] }}
+              transition={{ duration: 0.32, ease: "linear", repeat: Infinity }}
             />
-          </motion.div>
+          ) : null}
+          <AnimatePresence mode="wait">
+            <motion.strong
+              key={itemBoostActive ? "boosting" : itemRolling ? "rolling" : heldItem ?? "empty"}
+              className="relative text-sm uppercase tracking-wide"
+              initial={{ opacity: 0, y: 8, scale: 0.94 }}
+              animate={{
+                color: itemRolling ? "#f6d365" : itemColor,
+                opacity: 1,
+                scale: itemActive ? [1, 1.08, 1] : itemRolling ? [0.98, 1.05, 0.98] : 1,
+                y: 0,
+              }}
+              exit={{ opacity: 0, y: -8, scale: 0.94 }}
+              transition={{ duration: 0.28, repeat: itemActive || itemRolling ? Infinity : 0 }}
+            >
+              {itemRolling ? "???" : activeItemLabel}
+            </motion.strong>
+          </AnimatePresence>
         </div>
       </motion.div>
 
-      <motion.div
-        className="absolute bottom-28 right-4 md:bottom-5 md:right-5"
-        initial={{ opacity: 0, x: 18, y: 8 }}
-        animate={{ opacity: 1, x: 0, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.25 }}
-      >
-        <Speedometer maxSpeed={maxSpeedKmh} nitroActive={nitroActive} speed={speedKmh} />
-      </motion.div>
-    </div>
-  );
-}
-
-function Speedometer({
-  maxSpeed,
-  nitroActive,
-  speed,
-}: {
-  maxSpeed: number;
-  nitroActive: boolean;
-  speed: number;
-}) {
-  const startAngle = -118;
-  const endAngle = 118;
-  const angleRange = endAngle - startAngle;
-  const centerX = 100;
-  const centerY = 112;
-  const radius = 72;
-  const progress = clamp(speed / maxSpeed, 0, 1);
-  const needleAngle = startAngle + progress * angleRange;
-  const activeArc = describeArc(centerX, centerY, radius, startAngle, needleAngle);
-  const baseArc = describeArc(centerX, centerY, radius, startAngle, endAngle);
-  const ticks = Array.from({ length: 9 }, (_, index) => {
-    const tickProgress = index / 8;
-    const angle = startAngle + tickProgress * angleRange;
-    const outer = polarToCartesian(centerX, centerY, radius + 7, angle);
-    const inner = polarToCartesian(centerX, centerY, index % 2 === 0 ? radius - 10 : radius - 5, angle);
-
-    return {
-      angle,
-      inner,
-      label: Math.round(maxSpeed * tickProgress),
-      outer,
-      showLabel: index % 2 === 0,
-    };
-  });
-
-  return (
-    <div className="relative h-44 w-52 rounded-3xl border border-white/10 bg-[#111418]/84 p-2 shadow-2xl backdrop-blur">
-      <svg aria-label={`Velocimetro ${speed} km/h`} className="h-full w-full" role="img" viewBox="0 0 200 168">
-        <path d={baseArc} fill="none" stroke="rgb(255 255 255 / 0.12)" strokeLinecap="round" strokeWidth="10" />
-        <motion.path
-          d={activeArc}
-          fill="none"
-          stroke={nitroActive ? "#66cfb2" : "#f6d365"}
-          strokeLinecap="round"
-          strokeWidth="10"
-          transition={{ duration: 0.16 }}
-        />
-        {ticks.map((tick) => (
-          <g key={tick.angle}>
-            <line
-              stroke="rgb(248 243 232 / 0.45)"
-              strokeLinecap="round"
-              strokeWidth={tick.showLabel ? 2 : 1}
-              x1={tick.inner.x}
-              x2={tick.outer.x}
-              y1={tick.inner.y}
-              y2={tick.outer.y}
-            />
-            {tick.showLabel ? (
-              <text
-                fill="rgb(248 243 232 / 0.52)"
-                fontSize="8"
-                fontWeight="700"
-                textAnchor="middle"
-                x={polarToCartesian(centerX, centerY, radius - 26, tick.angle).x}
-                y={polarToCartesian(centerX, centerY, radius - 26, tick.angle).y + 3}
-              >
-                {tick.label}
-              </text>
-            ) : null}
-          </g>
-        ))}
-      </svg>
-      <div className="absolute inset-x-0 bottom-3 text-center">
-        <motion.strong
-          className="block text-3xl leading-none tabular-nums"
-          animate={{
-            color: nitroActive ? "#66cfb2" : "#f8f3e8",
-            scale: nitroActive ? 1.06 : 1,
-          }}
-          transition={{ duration: 0.18 }}
-        >
-          {speed}
-        </motion.strong>
-        <span className="text-[0.58rem] font-semibold uppercase text-[#f8f3e8]/45">Km/h</span>
-      </div>
     </div>
   );
 }

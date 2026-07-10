@@ -43,6 +43,8 @@ const pLeft = new Vector3();
 const pRight = new Vector3();
 const cLeft = new Vector3();
 const cRight = new Vector3();
+const wheelLeft = new Vector3();
+const wheelRight = new Vector3();
 
 function createTrail(material: MeshBasicMaterial): Trail {
   const positions = new Float32Array(MAX_SEGMENTS * FLOATS_PER_SEGMENT);
@@ -187,28 +189,19 @@ export function DriftMarks() {
     const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
     const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
 
-    trackTrail(
-      trails[0],
-      new Vector3(
-        rearCenterX - rightX * wheelHalfWidth,
-        GROUND_Y,
-        rearCenterZ - rightZ * wheelHalfWidth,
-      ),
-      intensity,
-      emit,
-      markWidth,
+    wheelLeft.set(
+      rearCenterX - rightX * wheelHalfWidth,
+      GROUND_Y,
+      rearCenterZ - rightZ * wheelHalfWidth,
     );
-    trackTrail(
-      trails[1],
-      new Vector3(
-        rearCenterX + rightX * wheelHalfWidth,
-        GROUND_Y,
-        rearCenterZ + rightZ * wheelHalfWidth,
-      ),
-      intensity,
-      emit,
-      markWidth,
+    wheelRight.set(
+      rearCenterX + rightX * wheelHalfWidth,
+      GROUND_Y,
+      rearCenterZ + rightZ * wheelHalfWidth,
     );
+
+    trackTrail(trails[0], wheelLeft, intensity, emit, markWidth);
+    trackTrail(trails[1], wheelRight, intensity, emit, markWidth);
   });
 
   return (

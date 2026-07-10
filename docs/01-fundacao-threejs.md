@@ -22,15 +22,15 @@ Three.js cuida do mundo 3D:
 
 React cuida da interface textual:
 
-- `src/components/game/GameHud.tsx` mostra tempo, voltas, nitro e comandos.
+- `src/components/game/GameHud.tsx` mostra tempo, voltas, item atual e comandos.
 - `src/components/game/IntroScreen.tsx` permite escolher o veiculo e a variante antes de jogar.
 
 Dados e regras ficam separados:
 
 - `src/features/racing-game/data/trackData.ts` guarda o desenho da pista, decoracoes e segmentos dirigiveis.
 - `src/features/racing-game/data/vehicleOptions.ts` define veiculos, variantes e handling.
-- `src/features/racing-game/game/movement.ts` calcula aceleracao, freio, direcao, atrito, drift e nitro.
-- `src/features/racing-game/game/useGameStore.ts` centraliza estado de partida, HUD, respawn, voltas e nitro.
+- `src/features/racing-game/game/movement.ts` calcula aceleracao, freio, direcao, atrito, efeitos de pneu e boost temporario.
+- `src/features/racing-game/game/useGameStore.ts` centraliza estado de partida, HUD, respawn, voltas e item de boost.
 
 ## Conceitos de Three.js usados aqui
 
@@ -68,4 +68,4 @@ Os primeiros testes cobrem regras puras porque elas sao mais estaveis e mais fac
 2. Adicionar checkpoints intermediarios para validar voltas com mais precisao.
 3. Criar IA simples para adversarios.
 4. Adicionar tela de resultados e ranking local.
-5. Refinar audio, particulas e feedback de nitro.
+5. Refinar audio, particulas e feedback dos itens.

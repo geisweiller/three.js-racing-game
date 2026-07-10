@@ -5,7 +5,7 @@
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { MathUtils, type Group, type Mesh, type Object3D, type PointLight } from "three";
+import { MathUtils, type Group, type Mesh, type Object3D } from "three";
 import { getVehicleOption, getVehicleVariant } from "../data/vehicleOptions";
 import { withAssetBase } from "../game/assetPath";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
@@ -25,11 +25,9 @@ const VEHICLE_COLLIDER_RADIUS = 0.26;
 const TRACK_COLLISION_OUTSET = VEHICLE_COLLIDER_RADIUS / 2;
 const RESPAWN_BLINK_DURATION = 2.5;
 const RESPAWN_BLINK_INTERVAL = 0.16;
-const NITRO_FLASH_DURATION = 0.28;
 const FINISH_TRIGGER_RADIUS = 1.3;
 const LAP_ARM_DISTANCE = 7;
-const NITRO_BOOST_MULTIPLIER = 1.42;
-const NITRO_CONSUME_PER_SECOND = 25;
+const ITEM_BOOST_MULTIPLIER = 1.65;
 
 type VehicleVisual = {
   body: Object3D | null;
@@ -105,12 +103,12 @@ function cloneVehicle(source: Object3D, wheelOutset = 0): VehicleVisual {
 export function Player({ input }: PlayerProps) {
   const playerRef = useRef<Group>(null);
   const impactCooldown = useRef(0);
+  const lapHudTimer = useRef(0);
   const lapStartTime = useRef(0);
   const lapArmed = useRef(false);
-  const lastNitroPickupVersion = useRef(0);
-  const nitroFlash = useRef(0);
-  const nitroLightRef = useRef<PointLight>(null);
+  const previousItemInput = useRef(false);
   const respawnBlinkRemaining = useRef(0);
+  const shieldRef = useRef<Group>(null);
   const vehicleState = useRef<VehicleState>({
     acceleration: 0,
     angularSpeed: 0,
@@ -119,16 +117,14 @@ export function Player({ input }: PlayerProps) {
     heading: START_HEADING,
     speed: 0,
   });
-  const nitroPickupVersion = useGameStore((state) => state.nitroPickupVersion);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
   const selectedVehicleVariantId = useGameStore((state) => state.selectedVehicleVariantId);
   const completeLap = useGameStore((state) => state.completeLap);
-  const consumeNitroCharge = useGameStore((state) => state.consumeNitroCharge);
-  const setPlayerHeading = useGameStore((state) => state.setPlayerHeading);
-  const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
+  const tickItems = useGameStore((state) => state.tickItems);
+  const activateHeldItem = useGameStore((state) => state.activateHeldItem);
   const setCurrentLapTime = useGameStore((state) => state.setCurrentLapTime);
-  const setVehicleTelemetry = useGameStore((state) => state.setVehicleTelemetry);
+  const setPlayerFrameState = useGameStore((state) => state.setPlayerFrameState);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const selectedVehicleVariant = getVehicleVariant(selectedVehicle, selectedVehicleVariantId);
   const vehicleModelPath = selectedVehicleVariant.modelPath;
@@ -152,6 +148,7 @@ export function Player({ input }: PlayerProps) {
 
   useEffect(() => {
     lapArmed.current = false;
+    lapHudTimer.current = 0;
     lapStartTime.current = 0;
     respawnBlinkRemaining.current = RESPAWN_BLINK_DURATION;
 
@@ -182,33 +179,19 @@ export function Player({ input }: PlayerProps) {
       respawnBlinkRemaining.current === 0 ||
       Math.floor(respawnBlinkRemaining.current / RESPAWN_BLINK_INTERVAL) % 2 === 0;
 
-    if (lastNitroPickupVersion.current !== nitroPickupVersion) {
-      lastNitroPickupVersion.current = nitroPickupVersion;
-      nitroFlash.current = NITRO_FLASH_DURATION;
-    }
-
-    nitroFlash.current = Math.max(0, nitroFlash.current - delta);
-    if (nitroLightRef.current) {
-      nitroLightRef.current.intensity = MathUtils.clamp(
-        nitroFlash.current / NITRO_FLASH_DURATION,
-        0,
-        1,
-      ) * 3.5;
-    }
-
     if (lapStartTime.current === 0) {
       lapStartTime.current = state.clock.elapsedTime;
     }
 
-    const nitroCharge = useGameStore.getState().nitroCharge;
-    const nitroActive = input.nitro && nitroCharge > 0;
-    const nitroBoost = nitroActive ? NITRO_BOOST_MULTIPLIER : 1;
+    const itemBoostActive = useGameStore.getState().itemBoostRemaining > 0;
+    const boostMultiplier = itemBoostActive ? ITEM_BOOST_MULTIPLIER : 1;
 
-    if (input.nitro) {
-      consumeNitroCharge(nitroActive ? NITRO_CONSUME_PER_SECOND * delta : 0);
-    } else if (useGameStore.getState().nitroActive) {
-      consumeNitroCharge(0);
+    if (input.item && !previousItemInput.current) {
+      activateHeldItem();
     }
+
+    previousItemInput.current = input.item;
+    tickItems(delta);
 
     const surface = isPointOnTrack(vehicleState.current.position, 0.35) ? "track" : "offroad";
     let nextState = updateVehicle(
@@ -217,7 +200,7 @@ export function Player({ input }: PlayerProps) {
       delta,
       surface,
       selectedVehicle.handling,
-      nitroBoost,
+      boostMultiplier,
     );
     const trackConstraint = constrainPointToTrack(
       nextState.position,
@@ -230,16 +213,17 @@ export function Player({ input }: PlayerProps) {
 
     if (trackConstraint.collided) {
       const incomingSpeed = Math.abs(nextState.speed);
+      const shieldActive = useGameStore.getState().itemShieldRemaining > 0;
 
       nextState = {
         ...nextState,
-        angularSpeed: nextState.angularSpeed * 0.25,
+        angularSpeed: nextState.angularSpeed * (shieldActive ? 0.8 : 0.25),
         driftIntensity: 0,
         position: trackConstraint.position,
-        speed: -nextState.speed * 0.18,
+        speed: shieldActive ? nextState.speed * 0.62 : -nextState.speed * 0.18,
       };
 
-      if (incomingSpeed > 1.1 && impactCooldown.current === 0) {
+      if (!shieldActive && incomingSpeed > 1.1 && impactCooldown.current === 0) {
         impactIntensity = MathUtils.clamp(incomingSpeed / selectedVehicle.handling.maxForwardSpeed, 0, 1);
         impactCooldown.current = 0.28;
       }
@@ -261,9 +245,15 @@ export function Player({ input }: PlayerProps) {
 
       completeLap(lapTime);
       lapStartTime.current = state.clock.elapsedTime;
+      lapHudTimer.current = 0;
       lapArmed.current = false;
     } else {
-      setCurrentLapTime(state.clock.elapsedTime - lapStartTime.current);
+      lapHudTimer.current += delta;
+
+      if (lapHudTimer.current >= 0.05) {
+        lapHudTimer.current = 0;
+        setCurrentLapTime(state.clock.elapsedTime - lapStartTime.current);
+      }
     }
 
     player.position.set(...nextState.position);
@@ -289,6 +279,7 @@ export function Player({ input }: PlayerProps) {
     const bodyRoll = -inputX * speed01 * 0.24;
     const steerAngle = inputX / 1.5;
     const body = bodyRef.current;
+    const shield = shieldRef.current;
 
     if (body) {
       body.rotation.x = lerpAngle(
@@ -311,12 +302,19 @@ export function Player({ input }: PlayerProps) {
       wheel.rotation.y = lerpAngle(wheel.rotation.y, steerAngle, delta * 10);
     }
 
-    setPlayerHeading(nextState.heading);
-    setPlayerPosition(nextState.position);
-    setVehicleTelemetry({
+    if (shield) {
+      const shieldActive = useGameStore.getState().itemShieldRemaining > 0;
+      shield.visible = shieldActive;
+      shield.rotation.y += delta * 2.4;
+      shield.scale.setScalar(shieldActive ? 1 + Math.sin(state.clock.elapsedTime * 8) * 0.035 : 1);
+    }
+
+    setPlayerFrameState({
       angularSpeed: nextState.angularSpeed,
       driftIntensity: nextState.driftIntensity,
+      heading: nextState.heading,
       impactIntensity,
+      position: nextState.position,
       speed: nextState.speed,
       throttle: Number(input.forward) - Number(input.backward),
     });
@@ -324,7 +322,12 @@ export function Player({ input }: PlayerProps) {
 
   return (
     <group ref={playerRef} position={START_POSITION} rotation={[0, START_HEADING, 0]}>
-      <pointLight ref={nitroLightRef} color="#66cfb2" distance={3.4} intensity={0} position={[0, 0.75, 0]} />
+      <group ref={shieldRef} visible={false}>
+        <mesh>
+          <sphereGeometry args={[0.82, 24, 12]} />
+          <meshBasicMaterial color="#7dd3fc" opacity={0.22} transparent wireframe />
+        </mesh>
+      </group>
       <primitive key={vehicleAssetPath} object={vehicleVisual.model} scale={vehicleScale} />
     </group>
   );

@@ -11,8 +11,8 @@ const baseState = {
 const idleInput: MovementInput = {
   backward: false,
   forward: false,
+  item: false,
   left: false,
-  nitro: false,
   right: false,
 };
 
@@ -157,13 +157,13 @@ describe("updateVehicle", () => {
     expect(turningState.driftIntensity).toBeGreaterThan(straightState.driftIntensity);
   });
 
-  it("uses nitro boost to raise acceleration and top speed while active", () => {
+  it("uses item boost to raise acceleration and top speed while active", () => {
     const vehicle = getVehicleOption("kart-oobi");
     const base = { ...baseState, position: [0, 0, 2] as const, heading: 0, speed: 5 };
     const normalState = updateVehicle(base, input({ forward: true }), 0.5, "track", vehicle.handling);
     const boostedState = updateVehicle(
       base,
-      input({ forward: true, nitro: true }),
+      input({ forward: true, item: true }),
       0.5,
       "track",
       vehicle.handling,

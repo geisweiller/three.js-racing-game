@@ -1,17 +1,18 @@
-# Circuito Nitro
+# Circuito Kart
 
-Circuito Nitro e um jogo de corrida 3D feito com Next.js, React, Three.js e React Three Fiber. O jogador escolhe um veiculo, troca variantes visuais, corre em um circuito low-poly, coleta caixas de nitro e tenta melhorar seus tempos de volta.
+Circuito Kart e um jogo de corrida 3D feito com Next.js, React, Three.js e React Three Fiber. O jogador escolhe um kart, corre em um circuito low-poly, coleta caixas de item e tenta melhorar seus tempos de volta.
 
 ## Gameplay
 
-- Escolha entre Kart, Formula 1 e Carro de corrida.
-- Cada veiculo tem handling proprio: velocidade, aceleracao, curva, grip fora da pista e escala visual.
-- Variantes trocam o modelo 3D real usado no preview e durante a corrida.
+- Escolha entre diferentes modelos de kart.
+- Cada kart tem handling proprio: velocidade, aceleracao, curva, grip fora da pista e escala visual.
+- O modelo 3D escolhido no preview e o mesmo usado durante a corrida.
 - A pista usa assets do Starter Kit Racing, com colisao mantendo o carro dentro do circuito.
-- Caixas de nitro aparecem na pista e carregam a barra em 25%.
-- `Espaco` consome nitro para aumentar a velocidade enquanto houver carga.
-- O HUD mostra volta, tempo atual, ultima volta, melhor volta, barra de nitro e velocimetro.
-- Efeitos incluem marcas de pneu, fumaca, som de motor, skid, impacto e coleta de nitro.
+- Caixas de item aparecem na pista e giram o slot antes de guardar um item.
+- A roleta pode entregar `Boost` ou `Escudo`.
+- `Espaco` usa o item guardado; Boost acelera por alguns segundos e Escudo protege em colisao.
+- O HUD mostra volta, tempo atual, ultima volta, melhor volta e item atual.
+- Efeitos incluem marcas de pneu, fumaca, som de motor, skid, impacto e coleta de item.
 
 ## Controles
 
@@ -21,7 +22,7 @@ Circuito Nitro e um jogo de corrida 3D feito com Next.js, React, Three.js e Reac
 | `S` | Frear / re |
 | `A` | Virar para esquerda |
 | `D` | Virar para direita |
-| `Espaco` | Usar nitro |
+| `Espaco` | Usar item de boost |
 | `R` | Respawn |
 | `Esc` | Voltar ao menu |
 

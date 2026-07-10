@@ -7,7 +7,7 @@ import { DriftMarks } from "./DriftMarks";
 import { FollowCamera } from "./FollowCamera";
 import { Ground } from "./Ground";
 import { Lights } from "./Lights";
-import { NitroPickups } from "./NitroPickups";
+import { ItemPickups } from "./ItemPickups";
 import { Player } from "./Player";
 import { RacingTrack } from "./RacingTrack";
 import { SmokeTrails } from "./SmokeTrails";
@@ -16,7 +16,6 @@ import { VehicleAudio } from "./VehicleAudio";
 export function ExperienceScene() {
   const input = useKeyboardControls();
   const requestRespawn = useGameStore((state) => state.requestRespawn);
-  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
 
   useEffect(() => {
     function handleHotkeys(event: KeyboardEvent) {
@@ -30,9 +29,6 @@ export function ExperienceScene() {
         requestRespawn();
       }
 
-      if (key === "v") {
-        toggleCameraMode();
-      }
     }
 
     window.addEventListener("keydown", handleHotkeys);
@@ -40,14 +36,14 @@ export function ExperienceScene() {
     return () => {
       window.removeEventListener("keydown", handleHotkeys);
     };
-  }, [requestRespawn, toggleCameraMode]);
+  }, [requestRespawn]);
 
   return (
     <>
       <Lights />
       <Ground />
       <RacingTrack />
-      <NitroPickups />
+      <ItemPickups />
       <DriftMarks />
       <SmokeTrails />
       <Player input={input} />

@@ -5,8 +5,8 @@ import { defaultVehicle, type VehicleHandling } from "../data/vehicleOptions";
 export type MovementInput = {
   forward: boolean;
   backward: boolean;
+  item: boolean;
   left: boolean;
-  nitro: boolean;
   right: boolean;
 };
 
@@ -65,13 +65,13 @@ export function updateVehicle(
   delta: number,
   surface: VehicleSurface = "track",
   handling: VehicleHandling = defaultHandling,
-  nitroBoost = 1,
+  boostMultiplier = 1,
 ): VehicleState {
   const throttle = Number(input.forward) - Number(input.backward);
   const inputX = Number(input.left) - Number(input.right);
   const surfaceGrip = surface === "track" ? 1 : handling.offroadGripMultiplier;
   const surfaceSpeed = surface === "track" ? 1 : handling.offroadSpeedMultiplier;
-  const forwardSpeedLimit = handling.maxForwardSpeed * surfaceSpeed * nitroBoost;
+  const forwardSpeedLimit = handling.maxForwardSpeed * surfaceSpeed * boostMultiplier;
   let speed = clamp(state.speed, handling.maxReverseSpeed, forwardSpeedLimit);
   let direction = Math.sign(speed);
 
@@ -88,7 +88,7 @@ export function updateVehicle(
   if (throttle < 0 && speed > 0.1) {
     speed = lerp(speed, 0, delta * 8);
   } else if (throttle > 0) {
-    speed = lerp(speed, forwardSpeedLimit, delta * 1.5 * nitroBoost);
+    speed = lerp(speed, forwardSpeedLimit, delta * 1.5 * boostMultiplier);
   } else if (throttle < 0) {
     speed = lerp(speed, handling.maxReverseSpeed * surfaceSpeed, delta * 2);
   } else {

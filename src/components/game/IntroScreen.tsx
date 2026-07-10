@@ -61,7 +61,9 @@ export function IntroScreen() {
   const setGamePhase = useGameStore((state) => state.setGamePhase);
   const setSelectedVehicleId = useGameStore((state) => state.setSelectedVehicleId);
   const setSelectedVehicleVariantId = useGameStore((state) => state.setSelectedVehicleVariantId);
-  const selectedVehicle = vehicleOptions.find((vehicle) => vehicle.id === selectedVehicleId);
+  const selectedVehicle =
+    vehicleOptions.find((vehicle) => vehicle.id === selectedVehicleId) ?? vehicleOptions[0];
+  const selectedVariant = getVehicleVariant(selectedVehicle, selectedVehicleVariantId);
   const cardIntroVariants: Variants = {
     hidden: {
       opacity: 0,
@@ -84,23 +86,111 @@ export function IntroScreen() {
     setGamePhase("playing");
   }
 
+  function selectVehicle(vehicle: VehicleOption) {
+    setSelectedVehicleId(vehicle.id);
+    setSelectedVehicleVariantId(vehicle.variants[0].id);
+  }
+
   return (
     <main className="min-h-dvh overflow-y-auto bg-[#111418] px-4 py-6 text-[#f8f3e8] md:px-8">
-      <section className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col justify-center gap-6">
-        <div className="max-w-2xl">
-          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#f6d365]">
-            Racing game prototype
-          </p>
-          <h1 className="text-4xl font-bold md:text-6xl">Escolha seu kart</h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-[#f8f3e8]/75">
-            Escolha um kart, pegue caixas de nitro e tente melhorar seu tempo de volta no circuito.
+      <section className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-6xl flex-col justify-center gap-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#f6d365]">
+              Circuito Kart
+            </p>
+            <h1 className="text-4xl font-bold md:text-6xl">Escolha seu kart</h1>
+          </div>
+          <p className="max-w-md text-sm leading-6 text-[#f8f3e8]/68 md:text-right">
+            Selecione seu kart, compare os atributos e prepare a largada.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid min-h-104 overflow-hidden rounded-3xl border border-white/10 bg-[#171d24] shadow-2xl md:grid-cols-[1.35fr_0.9fr]">
+          <div className="relative min-h-72 border-b border-white/10 md:border-b-0 md:border-r">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${selectedVehicle.id}-${selectedVariant.id}`}
+                className="absolute inset-0"
+                initial={{ opacity: 0, x: -24, scale: 0.98 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 24, scale: 0.98 }}
+                transition={{ duration: 0.24, ease: "easeOut" }}
+              >
+                <VehiclePreview variant={selectedVariant} vehicle={selectedVehicle} />
+              </motion.div>
+            </AnimatePresence>
+            <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-[#f6d365]/35 bg-[#111418]/70 px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#f6d365] backdrop-blur">
+              Player 1
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-between gap-5 p-5 md:p-6">
+            <div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs uppercase tracking-[0.18em] text-[#f6d365]">
+                    Kart selecionado
+                  </span>
+                  <h2 className="mt-1 text-4xl font-bold">{selectedVehicle.name}</h2>
+                </div>
+                <Chip
+                  className="rounded-full bg-[#f6d365] px-3 py-1 text-[#111418]"
+                  size="sm"
+                  variant="soft"
+                >
+                  Pronto
+                </Chip>
+              </div>
+              <p className="text-sm leading-6 text-[#f8f3e8]/68">{selectedVehicle.description}</p>
+            </div>
+
+            <div className="space-y-3">
+              <StatBar
+                label="Velocidade"
+                value={selectedVehicle.handling.maxForwardSpeed}
+                max={statMax.speed}
+              />
+              <StatBar
+                label="Aceleracao"
+                value={selectedVehicle.handling.acceleration}
+                max={statMax.acceleration}
+              />
+              <StatBar
+                label="Curva"
+                value={selectedVehicle.handling.steerRate}
+                max={statMax.steering}
+              />
+              <StatBar
+                label="Aderencia"
+                value={selectedVehicle.handling.offroadGripMultiplier}
+                max={statMax.grip}
+              />
+            </div>
+
+            <Button
+              className="w-full rounded-full bg-[#f6d365] px-6 py-3 font-semibold text-[#111418] shadow-lg transition hover:bg-[#ffe08a]"
+              onClick={startGame}
+              size="lg"
+              variant="primary"
+            >
+              Correr com {selectedVehicle.name}
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#f8f3e8]/55">
+              Garagem
+            </h2>
+            <span className="text-xs text-[#f8f3e8]/42">Enter ou clique para escolher</span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {vehicleOptions.map((vehicle, index) => {
             const isSelected = vehicle.id === selectedVehicleId;
-            const selectedVariant = getVehicleVariant(vehicle, selectedVehicleVariantId);
+            const vehicleVariant = vehicle.variants[0];
 
             return (
               <motion.div
@@ -111,15 +201,11 @@ export function IntroScreen() {
                     ? "ring-2 ring-[#f6d365]/45"
                     : "hover:ring-2 hover:ring-white/20"
                   }`}
-                onClick={() => {
-                  setSelectedVehicleId(vehicle.id);
-                  setSelectedVehicleVariantId(selectedVariant.id);
-                }}
+                onClick={() => selectVehicle(vehicle)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    setSelectedVehicleId(vehicle.id);
-                    setSelectedVehicleVariantId(selectedVariant.id);
+                    selectVehicle(vehicle);
                   }
                 }}
                 role="button"
@@ -132,80 +218,30 @@ export function IntroScreen() {
                 whileTap={{ scale: 0.98 }}
               >
                 <Card
-                  className={`h-full overflow-hidden rounded-3xl border bg-[#171d24] ${
+                  className={`h-full overflow-hidden rounded-2xl border bg-[#171d24] ${
                     isSelected ? "border-[#f6d365]" : "border-white/10"
                   }`}
                 >
-                  <div className="h-64 md:h-72">
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.div
-                        key={`${vehicle.id}-${selectedVariant.id}`}
-                        className="h-full"
-                        initial={{ opacity: 0, rotate: -1.2, scale: 0.96, x: -18 }}
-                        animate={{ opacity: 1, rotate: 0, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, rotate: 1.2, scale: 0.98, x: 18 }}
-                        transition={{ duration: 0.24, ease: "easeOut" }}
-                      >
-                        <VehiclePreview variant={selectedVariant} vehicle={vehicle} />
-                      </motion.div>
-                    </AnimatePresence>
+                  <div className="h-36">
+                    <VehiclePreview variant={vehicleVariant} vehicle={vehicle} />
                   </div>
-                  <Card.Content className="p-4">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <h2 className="text-xl font-semibold">{vehicle.name}</h2>
-                      <Chip
-                        className={
-                          isSelected
-                            ? "rounded-full bg-[#f6d365] px-3 py-1 text-[#111418]"
-                            : "rounded-full bg-white/10 px-3 py-1 text-[#f8f3e8]/70"
-                        }
-                        size="sm"
-                        variant="soft"
-                      >
+                  <Card.Content className="flex items-center justify-between gap-2 p-3">
+                    <div>
+                      <h3 className="font-semibold leading-tight">{vehicle.name}</h3>
+                      <span className="text-xs text-[#f8f3e8]/50">
                         {isSelected ? "Selecionado" : "Escolher"}
-                      </Chip>
+                      </span>
                     </div>
-                    <p className="min-h-12 text-sm leading-6 text-[#f8f3e8]/68">
-                      {vehicle.description}
-                    </p>
-                    <div className="mt-4 space-y-2">
-                      <StatBar
-                        label="Velocidade"
-                        value={vehicle.handling.maxForwardSpeed}
-                        max={statMax.speed}
-                      />
-                      <StatBar
-                        label="Aceleracao"
-                        value={vehicle.handling.acceleration}
-                        max={statMax.acceleration}
-                      />
-                      <StatBar
-                        label="Curva"
-                        value={vehicle.handling.steerRate}
-                        max={statMax.steering}
-                      />
-                      <StatBar
-                        label="Aderencia"
-                        value={vehicle.handling.offroadGripMultiplier}
-                        max={statMax.grip}
-                      />
-                    </div>
+                    <span
+                      className="h-5 w-5 rounded-full border border-white/20"
+                      style={{ backgroundColor: vehicleVariant.swatch }}
+                    />
                   </Card.Content>
                 </Card>
               </motion.div>
             );
           })}
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button
-            className="w-64 rounded-full bg-[#f6d365] px-6 py-3 font-semibold text-[#111418] shadow-lg transition hover:bg-[#ffe08a]"
-            onClick={startGame}
-            size="lg"
-            variant="primary"
-          >
-            Correr com {selectedVehicle?.name}
-          </Button>
+          </div>
         </div>
       </section>
     </main>

@@ -27,9 +27,9 @@ Do Starter Kit Racing:
 
 Vamos seguir uma versao menor e mais didatica:
 
-- O jogador escolhe um veiculo e dirige em um circuito fechado.
+- O jogador escolhe um kart e dirige em um circuito fechado.
 - `W` acelera, `S` freia/re, `A` e `D` viram.
-- `Espaco` usa nitro quando a barra tiver carga.
+- `Espaco` usa o item depois que a roleta da caixa termina. Hoje a roleta pode entregar Boost ou Escudo.
 - A camera fica atras e acima do carro.
 - No MVP, a fisica e arcade e caseira. Antes de adicionar uma engine como Rapier, queremos entender aceleracao, direcao, atrito e camera follow.
 
@@ -50,6 +50,6 @@ Vamos seguir uma versao menor e mais didatica:
 
 1. Renomear `Player` para `Vehicle` quando a base estiver mais firme.
 2. Adicionar checkpoints e contador de volta.
-3. Criar pickups e power-ups alem do nitro.
+3. Criar novos pickups e power-ups alem do boost inicial.
 4. Melhorar a leitura visual do circuito com boxes, arquibancada e marcadores de volta.
 5. Avaliar Rapier quando precisarmos de colisao real, rampas ou objetos empurraveis.
