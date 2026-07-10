@@ -1,9 +1,8 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
-import { MeshStandardMaterial, type Group, type Mesh, type Object3D } from "three";
+import { useMemo } from "react";
+import { MeshStandardMaterial, type Mesh, type Object3D } from "three";
 import { withAssetBase } from "../game/assetPath";
 import { useGameStore, type DroppedSlimePuddle } from "../game/useGameStore";
 
@@ -50,21 +49,10 @@ export function SlimePuddles() {
 }
 
 function SlimePuddle({ gooModel, puddle }: { gooModel: Object3D; puddle: DroppedSlimePuddle }) {
-  const groupRef = useRef<Group>(null);
   const model = useMemo(() => gooModel.clone(true), [gooModel]);
-
-  useFrame((state) => {
-    if (!groupRef.current) {
-      return;
-    }
-
-    const pulse = 1 + Math.sin(state.clock.elapsedTime * 2.4 + puddle.id) * 0.025;
-    groupRef.current.scale.set(pulse, pulse, pulse);
-  });
 
   return (
     <group
-      ref={groupRef}
       position={[puddle.position[0], 0.095, puddle.position[2]]}
       rotation={[0, puddle.id * 0.47, 0]}
     >
