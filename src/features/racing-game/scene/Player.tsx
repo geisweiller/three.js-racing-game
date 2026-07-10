@@ -9,6 +9,7 @@ import { MathUtils, type Group, type Mesh, type Object3D } from "three";
 import { getVehicleOption, getVehicleVariant } from "../data/vehicleOptions";
 import { withAssetBase } from "../game/assetPath";
 import { updateVehicle, type MovementInput, type VehicleState } from "../game/movement";
+import { resetPlayerRuntime, updatePlayerRuntime } from "../game/playerRuntime";
 import { useGameStore } from "../game/useGameStore";
 import {
   constrainPointToTrack,
@@ -129,7 +130,6 @@ export function Player({ input }: PlayerProps) {
   const tickItems = useGameStore((state) => state.tickItems);
   const activateHeldItem = useGameStore((state) => state.activateHeldItem);
   const setCurrentLapTime = useGameStore((state) => state.setCurrentLapTime);
-  const setPlayerFrameState = useGameStore((state) => state.setPlayerFrameState);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const selectedVehicleVariant = getVehicleVariant(selectedVehicle, selectedVehicleVariantId);
   const vehicleModelPath = selectedVehicleVariant.modelPath;
@@ -157,6 +157,7 @@ export function Player({ input }: PlayerProps) {
     lapStartTime.current = 0;
     respawnBlinkRemaining.current = RESPAWN_BLINK_DURATION;
     slimeSpinRemaining.current = 0;
+    resetPlayerRuntime();
 
     vehicleState.current = {
       acceleration: 0,
@@ -250,20 +251,25 @@ export function Player({ input }: PlayerProps) {
     );
 
     if (hitSlimePuddle) {
+      const shieldActive = useGameStore.getState().itemShieldRemaining > 0;
+
       useGameStore.getState().removeSlimePuddle(hitSlimePuddle.id);
-      slimeSpinDirection.current = Math.sign(nextState.angularSpeed || nextState.speed || 1);
-      slimeSpinRemaining.current = SLIME_SPIN_DURATION;
 
-      nextState = {
-        ...nextState,
-        angularSpeed: nextState.angularSpeed + Math.sign(nextState.angularSpeed || 1) * 5.1,
-        driftIntensity: Math.max(nextState.driftIntensity, 1.45),
-        speed: nextState.speed * 0.36,
-      };
+      if (!shieldActive) {
+        slimeSpinDirection.current = Math.sign(nextState.angularSpeed || nextState.speed || 1);
+        slimeSpinRemaining.current = SLIME_SPIN_DURATION;
 
-      if (impactCooldown.current === 0) {
-        impactIntensity = 0.42;
-        impactCooldown.current = 0.32;
+        nextState = {
+          ...nextState,
+          angularSpeed: nextState.angularSpeed + Math.sign(nextState.angularSpeed || 1) * 5.1,
+          driftIntensity: Math.max(nextState.driftIntensity, 1.45),
+          speed: nextState.speed * 0.36,
+        };
+
+        if (impactCooldown.current === 0) {
+          impactIntensity = 0.42;
+          impactCooldown.current = 0.32;
+        }
       }
     }
 
@@ -288,7 +294,7 @@ export function Player({ input }: PlayerProps) {
     } else {
       lapHudTimer.current += delta;
 
-      if (lapHudTimer.current >= 0.05) {
+      if (lapHudTimer.current >= 0.1) {
         lapHudTimer.current = 0;
         setCurrentLapTime(state.clock.elapsedTime - lapStartTime.current);
       }
@@ -354,7 +360,7 @@ export function Player({ input }: PlayerProps) {
       shield.scale.setScalar(shieldActive ? 1 + Math.sin(state.clock.elapsedTime * 8) * 0.035 : 1);
     }
 
-    setPlayerFrameState({
+    updatePlayerRuntime({
       angularSpeed: nextState.angularSpeed,
       driftIntensity: nextState.driftIntensity,
       heading: nextState.heading,

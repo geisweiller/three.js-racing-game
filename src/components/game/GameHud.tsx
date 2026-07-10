@@ -29,7 +29,9 @@ export function GameHud() {
   const lastLapTime = useGameStore((state) => state.lastLapTime);
   const requestRespawn = useGameStore((state) => state.requestRespawn);
   const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
+  const cameraMode = useGameStore((state) => state.cameraMode);
   const setGamePhase = useGameStore((state) => state.setGamePhase);
+  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
   const selectedVehicle = getVehicleOption(selectedVehicleId);
   const itemBoostActive = itemBoostRemaining > 0;
   const itemShieldActive = itemShieldRemaining > 0;
@@ -120,6 +122,17 @@ export function GameHud() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18, duration: 0.25 }}
         >
+          <motion.button
+            aria-label="Alternar camera"
+            className="pointer-events-auto flex h-9 w-36 items-center justify-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
+            onClick={toggleCameraMode}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            <span>Camera</span>
+            <span>{cameraMode === "current" ? "Atual" : "Perto"}</span>
+            <Keycap>V</Keycap>
+          </motion.button>
           <motion.button
             className="pointer-events-auto flex h-9 items-center gap-2 rounded-full bg-[#111418]/80 px-3 text-xs text-[#f8f3e8]/75 shadow-lg backdrop-blur transition hover:bg-[#222832]"
             onClick={returnToMenu}

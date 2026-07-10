@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { getVehicleOption } from "../data/vehicleOptions";
 import { withAssetBase } from "../game/assetPath";
+import { playerRuntime } from "../game/playerRuntime";
 import { useGameStore } from "../game/useGameStore";
 
 const SKID_AUDIO_PATH = "/starter-kit-racing/audio/skid.ogg";
@@ -213,9 +214,9 @@ export function VehicleAudio() {
 
     const state = useGameStore.getState();
     const vehicle = getVehicleOption(state.selectedVehicleId);
-    const speed01 = clamp(Math.abs(state.playerSpeed) / vehicle.handling.maxForwardSpeed, 0, 1);
-    const load = clamp(Math.max(0, state.playerThrottle), 0, 1);
-    const drift = state.playerDriftIntensity;
+    const speed01 = clamp(Math.abs(playerRuntime.speed) / vehicle.handling.maxForwardSpeed, 0, 1);
+    const load = clamp(Math.max(0, playerRuntime.throttle), 0, 1);
+    const drift = playerRuntime.driftIntensity;
     const gearWindow = 1 / NUM_GEARS;
     const gearStart = audio.gear * gearWindow;
     const inGear = clamp((speed01 - gearStart) / gearWindow, 0, 1);
@@ -248,8 +249,8 @@ export function VehicleAudio() {
 
       const skidActive =
         drift > SKID_DRIFT_THRESHOLD &&
-        Math.abs(state.playerSpeed) > SKID_MIN_SPEED &&
-        Math.abs(state.playerAngularSpeed) > SKID_MIN_TURN_RATE;
+        Math.abs(playerRuntime.speed) > SKID_MIN_SPEED &&
+        Math.abs(playerRuntime.angularSpeed) > SKID_MIN_TURN_RATE;
       const skidVolume = skidActive
         ? remap(clamp(drift, SKID_DRIFT_THRESHOLD, 1.7), SKID_DRIFT_THRESHOLD, 1.7, 0.025, 0.2)
         : 0;
@@ -266,18 +267,18 @@ export function VehicleAudio() {
         audio.skid.currentTime = 0;
       }
 
-      if (state.playerImpactVersion !== audio.lastImpactVersion) {
-        audio.lastImpactVersion = state.playerImpactVersion;
+      if (playerRuntime.impactVersion !== audio.lastImpactVersion) {
+        audio.lastImpactVersion = playerRuntime.impactVersion;
 
-        if (state.playerImpactIntensity > 0.05) {
+        if (playerRuntime.impactIntensity > 0.05) {
           const source = audio.context.createBufferSource();
           const gain = audio.context.createGain();
-          const hardImpact = state.playerImpactIntensity > 0.55;
+          const hardImpact = playerRuntime.impactIntensity > 0.55;
 
           source.buffer = audio.impactBuffers[hardImpact ? 1 : 0];
-          source.playbackRate.value = 0.9 + state.playerImpactIntensity * 0.22;
+          source.playbackRate.value = 0.9 + playerRuntime.impactIntensity * 0.22;
           gain.gain.value = remap(
-            clamp(state.playerImpactIntensity, 0.05, 1),
+            clamp(playerRuntime.impactIntensity, 0.05, 1),
             0.05,
             1,
             0.05,

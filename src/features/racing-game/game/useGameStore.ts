@@ -1,11 +1,11 @@
 "use client";
 
 import { create } from "zustand";
-import { START_HEADING, START_POSITION } from "../data/trackData";
 import { defaultVehicle, type VehicleId, type VehicleVariantId } from "../data/vehicleOptions";
 import type { Vector3Tuple } from "./vector";
 
 type GamePhase = "intro" | "playing";
+export type CameraMode = "current" | "close";
 export type HeldItem = "boost" | "shield" | "slime";
 
 export type DroppedSlimePuddle = {
@@ -21,6 +21,7 @@ type ItemUseContext = {
 };
 
 type GameState = {
+  cameraMode: CameraMode;
   gamePhase: GamePhase;
   currentLapTime: number;
   bestLapTime: number | null;
@@ -33,45 +34,21 @@ type GameState = {
   itemRouletteRemaining: number;
   itemShieldRemaining: number;
   itemUseVersion: number;
-  playerHeading: number;
-  playerPosition: Vector3Tuple;
-  playerAngularSpeed: number;
-  playerSpeed: number;
-  playerThrottle: number;
-  playerDriftIntensity: number;
-  playerImpactIntensity: number;
-  playerImpactVersion: number;
   respawnVersion: number;
   selectedVehicleId: VehicleId;
   selectedVehicleVariantId: VehicleVariantId;
-  collectItemBox: () => void;
+  collectItemBox: () => boolean;
   completeLap: (lapTime: number) => void;
   removeSlimePuddle: (id: number) => void;
   requestRespawn: () => void;
   resetLapTimer: () => void;
   setCurrentLapTime: (time: number) => void;
+  setCameraMode: (mode: CameraMode) => void;
   setGamePhase: (phase: GamePhase) => void;
-  setPlayerHeading: (heading: number) => void;
   setSelectedVehicleId: (id: VehicleId) => void;
   setSelectedVehicleVariantId: (id: VehicleVariantId) => void;
-  setPlayerFrameState: (frameState: {
-    angularSpeed: number;
-    driftIntensity: number;
-    heading: number;
-    impactIntensity?: number;
-    position: Vector3Tuple;
-    speed: number;
-    throttle: number;
-  }) => void;
-  setPlayerPosition: (position: Vector3Tuple) => void;
-  setVehicleTelemetry: (telemetry: {
-    angularSpeed: number;
-    driftIntensity: number;
-    impactIntensity?: number;
-    speed: number;
-    throttle: number;
-  }) => void;
   tickItems: (delta: number) => void;
+  toggleCameraMode: () => void;
   activateHeldItem: (context?: ItemUseContext) => void;
 };
 
@@ -95,8 +72,9 @@ function drawItem(): HeldItem {
   return "slime";
 }
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   bestLapTime: null,
+  cameraMode: "current",
   currentLapTime: 0,
   droppedSlimePuddles: [],
   gamePhase: "intro",
@@ -108,26 +86,24 @@ export const useGameStore = create<GameState>((set) => ({
   itemUseVersion: 0,
   lapCount: 0,
   lastLapTime: null,
-  playerHeading: START_HEADING,
-  playerPosition: START_POSITION,
-  playerAngularSpeed: 0,
-  playerSpeed: 0,
-  playerThrottle: 0,
-  playerDriftIntensity: 0,
-  playerImpactIntensity: 0,
-  playerImpactVersion: 0,
   respawnVersion: 0,
   selectedVehicleId: defaultVehicle.id,
   selectedVehicleVariantId: defaultVehicle.variants[0].id,
-  collectItemBox: () =>
-    set((state) => {
-      const slotBusy = state.heldItem !== null || state.itemRouletteRemaining > 0;
+  collectItemBox: () => {
+    const state = get();
 
-      return {
-        itemPickupVersion: state.itemPickupVersion + 1,
-        itemRouletteRemaining: slotBusy ? state.itemRouletteRemaining : ITEM_ROULETTE_DURATION,
-      };
-    }),
+    if (state.itemBoostRemaining > 0 || state.itemShieldRemaining > 0) {
+      return false;
+    }
+
+    set({
+      heldItem: null,
+      itemPickupVersion: state.itemPickupVersion + 1,
+      itemRouletteRemaining: ITEM_ROULETTE_DURATION,
+    });
+
+    return true;
+  },
   completeLap: (lapTime) =>
     set((state) => ({
       bestLapTime: state.bestLapTime === null ? lapTime : Math.min(state.bestLapTime, lapTime),
@@ -143,13 +119,6 @@ export const useGameStore = create<GameState>((set) => ({
       itemBoostRemaining: 0,
       itemRouletteRemaining: 0,
       itemShieldRemaining: 0,
-      playerAngularSpeed: 0,
-      playerDriftIntensity: 0,
-      playerImpactIntensity: 0,
-      playerHeading: START_HEADING,
-      playerPosition: START_POSITION,
-      playerSpeed: 0,
-      playerThrottle: 0,
       respawnVersion: state.respawnVersion + 1,
     })),
   resetLapTimer: () =>
@@ -165,37 +134,10 @@ export const useGameStore = create<GameState>((set) => ({
       droppedSlimePuddles: state.droppedSlimePuddles.filter((puddle) => puddle.id !== id),
     })),
   setCurrentLapTime: (time) => set({ currentLapTime: time }),
+  setCameraMode: (mode) => set({ cameraMode: mode }),
   setGamePhase: (phase) => set({ gamePhase: phase }),
-  setPlayerHeading: (heading) => set({ playerHeading: heading }),
   setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
   setSelectedVehicleVariantId: (id) => set({ selectedVehicleVariantId: id }),
-  setPlayerFrameState: (frameState) =>
-    set((state) => ({
-      playerAngularSpeed: frameState.angularSpeed,
-      playerDriftIntensity: frameState.driftIntensity,
-      playerHeading: frameState.heading,
-      playerImpactIntensity: frameState.impactIntensity ?? 0,
-      playerImpactVersion:
-        frameState.impactIntensity && frameState.impactIntensity > 0.05
-          ? state.playerImpactVersion + 1
-          : state.playerImpactVersion,
-      playerPosition: frameState.position,
-      playerSpeed: frameState.speed,
-      playerThrottle: frameState.throttle,
-    })),
-  setPlayerPosition: (position) => set({ playerPosition: position }),
-  setVehicleTelemetry: (telemetry) =>
-    set((state) => ({
-      playerAngularSpeed: telemetry.angularSpeed,
-      playerDriftIntensity: telemetry.driftIntensity,
-      playerImpactIntensity: telemetry.impactIntensity ?? 0,
-      playerImpactVersion:
-        telemetry.impactIntensity && telemetry.impactIntensity > 0.05
-          ? state.playerImpactVersion + 1
-          : state.playerImpactVersion,
-      playerSpeed: telemetry.speed,
-      playerThrottle: telemetry.throttle,
-    })),
   tickItems: (delta) =>
     set((state) => {
       const itemBoostRemaining = Math.max(0, state.itemBoostRemaining - delta);
@@ -220,6 +162,10 @@ export const useGameStore = create<GameState>((set) => ({
         itemShieldRemaining,
       };
     }),
+  toggleCameraMode: () =>
+    set((state) => ({
+      cameraMode: state.cameraMode === "current" ? "close" : "current",
+    })),
   activateHeldItem: (context) =>
     set((state) => {
       if (state.heldItem === null || state.itemRouletteRemaining > 0) {

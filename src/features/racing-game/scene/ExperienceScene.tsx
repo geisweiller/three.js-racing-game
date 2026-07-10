@@ -17,6 +17,7 @@ import { VehicleAudio } from "./VehicleAudio";
 export function ExperienceScene() {
   const input = useKeyboardControls();
   const requestRespawn = useGameStore((state) => state.requestRespawn);
+  const toggleCameraMode = useGameStore((state) => state.toggleCameraMode);
 
   useEffect(() => {
     function handleHotkeys(event: KeyboardEvent) {
@@ -30,6 +31,9 @@ export function ExperienceScene() {
         requestRespawn();
       }
 
+      if (key === "v") {
+        toggleCameraMode();
+      }
     }
 
     window.addEventListener("keydown", handleHotkeys);
@@ -37,7 +41,7 @@ export function ExperienceScene() {
     return () => {
       window.removeEventListener("keydown", handleHotkeys);
     };
-  }, [requestRespawn]);
+  }, [requestRespawn, toggleCameraMode]);
 
   return (
     <>

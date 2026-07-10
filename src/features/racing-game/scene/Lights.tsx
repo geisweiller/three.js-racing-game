@@ -11,7 +11,7 @@ export function Lights() {
         shadow-camera-left={-40}
         shadow-camera-right={40}
         shadow-camera-top={40}
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-normalBias={0.04}
       />
     </>

@@ -1,22 +1,25 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
-import { roadTiles } from "../data/trackData";
+import { ROAD_WIDTH, roadTiles } from "../data/trackData";
+import { playerRuntime } from "../game/playerRuntime";
 import type { Vector3Tuple } from "../game/vector";
 import { useGameStore } from "../game/useGameStore";
 import { GlbModel } from "./GlbModel";
 
 const BOX_MODEL_PATH = "/game-assets/cars/box.glb";
-const MAX_PICKUPS = 10;
-const SPAWN_INTERVAL = 5;
-const PICKUP_RADIUS = 0.85;
-const MIN_SPAWN_DISTANCE_FROM_PLAYER = 5;
+const BOXES_PER_ROW = 4;
+const BOX_SPACING = ROAD_WIDTH / 5;
+const PICKUP_RADIUS = 0.42;
+const PICKUP_COOLDOWN = 0.35;
+const RESPAWN_DELAY = 15;
 const BOX_Y = 0.28;
 
 type ItemPickup = {
+  availableAt: number;
   id: number;
   position: Vector3Tuple;
 };
@@ -27,40 +30,62 @@ type CollectionEffect = {
   position: Vector3Tuple;
 };
 
-const spawnPoints = roadTiles.map((tile) => tile.position);
-
-function pickSpawnPoint(activePickups: ItemPickup[], playerPosition: Vector3Tuple) {
-  const used = new Set(activePickups.map((pickup) => `${pickup.position[0]},${pickup.position[2]}`));
-  const candidates = spawnPoints.filter(
-    (point) =>
-      !used.has(`${point[0]},${point[2]}`) &&
-      distance2D(playerPosition, point) >= MIN_SPAWN_DISTANCE_FROM_PLAYER,
-  );
-  const source = candidates.length > 0 ? candidates : spawnPoints;
-
-  return source[Math.floor(Math.random() * source.length)];
-}
+const itemRows = [
+  { id: "north", lateral: [0, 0, 1] as Vector3Tuple, tileId: "straight-2-4" },
+  { id: "east", lateral: [1, 0, 0] as Vector3Tuple, tileId: "straight-4--3" },
+  { id: "south", lateral: [0, 0, 1] as Vector3Tuple, tileId: "straight-0--5" },
+];
 
 function distance2D(a: Vector3Tuple, b: Vector3Tuple) {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
 }
 
+function getRoadTilePosition(tileId: string) {
+  const tile = roadTiles.find((roadTile) => roadTile.id === tileId);
+
+  if (!tile) {
+    throw new Error(`Missing item row tile: ${tileId}`);
+  }
+
+  return tile.position;
+}
+
+function createInitialPickups(): ItemPickup[] {
+  return itemRows.flatMap((row, rowIndex) => {
+    const center = getRoadTilePosition(row.tileId);
+
+    return Array.from({ length: BOXES_PER_ROW }, (_, index) => {
+      const offset = (index - (BOXES_PER_ROW - 1) / 2) * BOX_SPACING;
+
+      return {
+        availableAt: 0,
+        id: index + rowIndex * BOXES_PER_ROW + 1,
+        position: [
+          center[0] + row.lateral[0] * offset,
+          BOX_Y,
+          center[2] + row.lateral[2] * offset,
+        ] as Vector3Tuple,
+      };
+    });
+  });
+}
+
 export function ItemPickups() {
-  const nextId = useRef(1);
   const lastRespawnVersion = useRef(0);
-  const spawnTimer = useRef(0);
+  const lastPickupAt = useRef(-Infinity);
   const nextEffectId = useRef(1);
+  const initialPickups = useMemo(() => createInitialPickups(), []);
   const [effects, setEffects] = useState<CollectionEffect[]>([]);
-  const [pickups, setPickups] = useState<ItemPickup[]>([]);
+  const [pickups, setPickups] = useState<ItemPickup[]>(initialPickups);
   const collectItemBox = useGameStore((state) => state.collectItemBox);
   const respawnVersion = useGameStore((state) => state.respawnVersion);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (lastRespawnVersion.current !== respawnVersion) {
       lastRespawnVersion.current = respawnVersion;
-      spawnTimer.current = 0;
+      lastPickupAt.current = -Infinity;
       setEffects([]);
-      setPickups([]);
+      setPickups(initialPickups);
       return;
     }
 
@@ -74,46 +99,44 @@ export function ItemPickups() {
         .filter((effect) => effect.age < 0.8);
     });
 
-    spawnTimer.current += delta;
-
-    if (spawnTimer.current >= SPAWN_INTERVAL) {
-      spawnTimer.current = 0;
-      const playerPosition = useGameStore.getState().playerPosition;
-
-      setPickups((current) => {
-        if (current.length >= MAX_PICKUPS) {
-          return current;
-        }
-
-        const spawnPoint = pickSpawnPoint(current, playerPosition);
-
-        return [
-          ...current,
-          {
-            id: nextId.current++,
-            position: [spawnPoint[0], BOX_Y, spawnPoint[2]],
-          },
-        ];
-      });
+    if (state.clock.elapsedTime - lastPickupAt.current < PICKUP_COOLDOWN) {
+      return;
     }
 
-    const playerPosition = useGameStore.getState().playerPosition;
+    const playerPosition = playerRuntime.position;
     const collectedPickups = pickups.filter(
-      (pickup) => distance2D(playerPosition, pickup.position) <= PICKUP_RADIUS,
+      (pickup) =>
+        state.clock.elapsedTime >= pickup.availableAt &&
+        distance2D(playerPosition, pickup.position) <= PICKUP_RADIUS,
     );
 
     if (collectedPickups.length > 0) {
-      const collectedIds = new Set(collectedPickups.map((pickup) => pickup.id));
-      setPickups((current) => current.filter((pickup) => !collectedIds.has(pickup.id)));
+      const nearestPickup = collectedPickups.reduce((nearest, pickup) =>
+        distance2D(playerPosition, pickup.position) < distance2D(playerPosition, nearest.position) ? pickup : nearest,
+      );
+      const acceptedPickup = collectItemBox() ? nearestPickup : null;
+
+      if (!acceptedPickup) {
+        return;
+      }
+
+      lastPickupAt.current = state.clock.elapsedTime;
+
+      setPickups((current) =>
+        current.map((pickup) =>
+          pickup.id === acceptedPickup.id
+            ? { ...pickup, availableAt: state.clock.elapsedTime + RESPAWN_DELAY }
+            : pickup,
+        ),
+      );
       setEffects((current) => [
         ...current,
-        ...collectedPickups.map((pickup) => ({
+        {
           age: 0,
           id: nextEffectId.current++,
-          position: pickup.position,
-        })),
+          position: acceptedPickup.position,
+        },
       ]);
-      collectedPickups.forEach(() => collectItemBox());
     }
   });
 
@@ -132,10 +155,16 @@ export function ItemPickups() {
 function ItemPickupBox({ pickup }: { pickup: ItemPickup }) {
   const groupRef = useRef<Group>(null);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 1.8;
-      groupRef.current.position.y = pickup.position[1] + Math.sin(Date.now() * 0.004 + pickup.id) * 0.08;
+      const available = state.clock.elapsedTime >= pickup.availableAt;
+
+      groupRef.current.visible = available;
+
+      if (available) {
+        groupRef.current.rotation.y += delta * 1.8;
+        groupRef.current.position.y = pickup.position[1] + Math.sin(state.clock.elapsedTime * 4 + pickup.id) * 0.08;
+      }
     }
   });
 

@@ -19,8 +19,8 @@ export function GameCanvas() {
   return (
     <Canvas
       camera={{ position: [0, 9, 11], fov: 42 }}
-      dpr={[1, 2]}
-      gl={{ alpha: false }}
+      dpr={[1, 1.35]}
+      gl={{ alpha: false, powerPreference: "high-performance" }}
       onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
       shadows
       className="h-full w-full"

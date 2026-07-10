@@ -16,9 +16,10 @@ import {
 } from "three";
 import { getVehicleOption } from "../data/vehicleOptions";
 import { withAssetBase } from "../game/assetPath";
+import { playerRuntime } from "../game/playerRuntime";
 import { useGameStore } from "../game/useGameStore";
 
-const POOL_SIZE = 1280;
+const POOL_SIZE = 480;
 const PARTICLES_PER_EMIT = 1;
 const EMIT_JITTER = 0.15;
 const BASE_SIZE = 0.65;
@@ -143,6 +144,8 @@ function emitAt(system: SmokeSystem, x: number, y: number, z: number) {
 }
 
 export function SmokeTrails() {
+  const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
+  const selectedVehicle = useMemo(() => getVehicleOption(selectedVehicleId), [selectedVehicleId]);
   const smokeTexture = useLoader(
     TextureLoader,
     withAssetBase("/starter-kit-racing/sprites/smoke.png"),
@@ -150,26 +153,24 @@ export function SmokeTrails() {
   const system = useMemo(() => createSmokeSystem(smokeTexture), [smokeTexture]);
 
   useFrame((_, delta) => {
-    const state = useGameStore.getState();
-    const selectedVehicle = getVehicleOption(state.selectedVehicleId);
     const shouldEmit =
-      state.playerDriftIntensity > DRIFT_THRESHOLD &&
-      Math.abs(state.playerSpeed) > MIN_DRIFT_SPEED &&
-      Math.abs(state.playerAngularSpeed) > MIN_DRIFT_TURN_RATE;
+      playerRuntime.driftIntensity > DRIFT_THRESHOLD &&
+      Math.abs(playerRuntime.speed) > MIN_DRIFT_SPEED &&
+      Math.abs(playerRuntime.angularSpeed) > MIN_DRIFT_TURN_RATE;
     let aliveCount = 0;
 
     if (shouldEmit) {
       const { rearAxleOffset, wheelHalfWidth } = selectedVehicle.trail;
-      const forwardX = Math.sin(state.playerHeading);
-      const forwardZ = Math.cos(state.playerHeading);
-      const rightX = Math.cos(state.playerHeading);
-      const rightZ = -Math.sin(state.playerHeading);
-      const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
-      const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
+      const forwardX = Math.sin(playerRuntime.heading);
+      const forwardZ = Math.cos(playerRuntime.heading);
+      const rightX = Math.cos(playerRuntime.heading);
+      const rightZ = -Math.sin(playerRuntime.heading);
+      const rearCenterX = playerRuntime.position[0] + forwardX * rearAxleOffset;
+      const rearCenterZ = playerRuntime.position[2] + forwardZ * rearAxleOffset;
       // O Starter emite em container.y + 0.05. Aqui os GLBs da pista ficam
       // mais altos depois da escala, entao mantemos a mesma logica e elevamos
       // apenas o plano de emissao para a fumaça nao nascer dentro do asfalto.
-      const roadY = state.playerPosition[1] + ROAD_SMOKE_Y;
+      const roadY = playerRuntime.position[1] + ROAD_SMOKE_Y;
 
       wheelLeft.set(rearCenterX - rightX * wheelHalfWidth, roadY, rearCenterZ - rightZ * wheelHalfWidth);
       wheelRight.set(rearCenterX + rightX * wheelHalfWidth, roadY, rearCenterZ + rightZ * wheelHalfWidth);

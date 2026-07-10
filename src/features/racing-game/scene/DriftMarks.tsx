@@ -12,9 +12,10 @@ import {
   Vector3,
 } from "three";
 import { getVehicleOption } from "../data/vehicleOptions";
+import { playerRuntime } from "../game/playerRuntime";
 import { useGameStore } from "../game/useGameStore";
 
-const MAX_SEGMENTS = 4096;
+const MAX_SEGMENTS = 1536;
 const VERTS_PER_SEGMENT = 6;
 const FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 3;
 const COLOR_FLOATS_PER_SEGMENT = VERTS_PER_SEGMENT * 4;
@@ -155,6 +156,8 @@ function trackTrail(
 }
 
 export function DriftMarks() {
+  const selectedVehicleId = useGameStore((state) => state.selectedVehicleId);
+  const vehicle = useMemo(() => getVehicleOption(selectedVehicleId), [selectedVehicleId]);
   const material = useMemo(
     () =>
       new MeshBasicMaterial({
@@ -173,21 +176,19 @@ export function DriftMarks() {
   const trails = useMemo(() => [createTrail(material), createTrail(material)], [material]);
 
   useFrame(() => {
-    const state = useGameStore.getState();
-    const vehicle = getVehicleOption(state.selectedVehicleId);
     const { markWidth, rearAxleOffset, wheelHalfWidth } = vehicle.trail;
-    const intensity = state.playerDriftIntensity;
+    const intensity = playerRuntime.driftIntensity;
     const emit =
       intensity > DRIFT_THRESHOLD &&
-      Math.abs(state.playerSpeed) > MIN_DRIFT_SPEED &&
-      Math.abs(state.playerAngularSpeed) > MIN_DRIFT_TURN_RATE;
-    const forwardX = Math.sin(state.playerHeading);
-    const forwardZ = Math.cos(state.playerHeading);
-    const rightX = Math.cos(state.playerHeading);
-    const rightZ = -Math.sin(state.playerHeading);
+      Math.abs(playerRuntime.speed) > MIN_DRIFT_SPEED &&
+      Math.abs(playerRuntime.angularSpeed) > MIN_DRIFT_TURN_RATE;
+    const forwardX = Math.sin(playerRuntime.heading);
+    const forwardZ = Math.cos(playerRuntime.heading);
+    const rightX = Math.cos(playerRuntime.heading);
+    const rightZ = -Math.sin(playerRuntime.heading);
 
-    const rearCenterX = state.playerPosition[0] + forwardX * rearAxleOffset;
-    const rearCenterZ = state.playerPosition[2] + forwardZ * rearAxleOffset;
+    const rearCenterX = playerRuntime.position[0] + forwardX * rearAxleOffset;
+    const rearCenterZ = playerRuntime.position[2] + forwardZ * rearAxleOffset;
 
     wheelLeft.set(
       rearCenterX - rightX * wheelHalfWidth,
